@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>AdvocateDesk — Practice Management</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">⚖</div><div><strong>AdvocateDesk</strong><small>Practice Management</small></div></div>
+    <nav id="nav">
+      <button class="nav-item active" data-page="dashboard">▦ <span>Dashboard</span></button>
+      <button class="nav-item" data-page="cases">⚖ <span>Cases</span></button>
+      <button class="nav-item" data-page="clients">♙ <span>Clients</span></button>
+      <button class="nav-item" data-page="hearings">◷ <span>Hearings</span></button>
+      <button class="nav-item" data-page="calendar">▣ <span>Calendar</span></button>
+      <button class="nav-item" data-page="documents">▤ <span>Documents</span></button>
+      <button class="nav-item" data-page="tasks">✓ <span>Tasks</span></button>
+      <button class="nav-item" data-page="finance">₹ <span>Finance</span></button>
+      <button class="nav-item" data-page="reports">▥ <span>Reports</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="nav-item" data-page="settings">⚙ <span>Settings</span></button>
+        <button class="nav-item admin-only" data-page="central-control">
+          <span class="nav-icon">⚙</span><span>Central Control</span>
+        </button>
+      <div class="profile-mini"><div class="avatar">A</div><div><strong>Advocate Admin</strong><small>Demo Workspace</small></div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="mobile-menu" id="mobileMenu">☰</button>
+      <div class="search"><span>⌕</span><input id="globalSearch" placeholder="Search cases, clients, hearings..."></div>
+      <div class="top-actions"><button class="icon-btn" title="Notifications">♢</button><button class="user-chip">A <span>Advocate Admin</span> ▾</button></div>
+    </header>
+    <section id="content" class="content"></section>
+  </main>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="modalTitle">New Record</h3><button id="modalClose">×</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<script src="auth.js"></script><script src="app.js"></script>
+</body>
+</html>
