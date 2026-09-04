@@ -65,11 +65,11 @@ function dashboard(){
 function cases(){
  content.innerHTML=layout("Cases","Manage your complete case portfolio",`openModal('case')`)+
  `<div class="toolbar"><input class="filter" id="caseFilter" placeholder="Search case number, title or client..." oninput="filterTable('caseTable',this.value)"><select class="filter"><option>All Statuses</option><option>Active</option><option>Pending</option><option>Reserved</option></select></div>
- <div class="panel"><table id="caseTable"><thead><tr><th>Case</th><th>Client</th><th>Court</th><th>Next Hearing</th><th>Status</th></tr></thead><tbody>${state.cases.map(c=>`<tr><td><span class="case-link">${c.number}</span><br><span class="muted">${c.title}</span></td><td>${c.client}</td><td>${c.court}</td><td>${fmtDate(c.next)}</td><td>${badge(c.status)}</td></tr>`).join("")}</tbody></table></div>`;
+ <div class="panel"><table id="caseTable"><thead><tr><th>Case</th><th>Client</th><th>Court</th><th>Next Hearing</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.cases.map((c,i)=>`<tr><td><span class="case-link">${c.number}</span><br><span class="muted">${c.title}</span></td><td>${c.client}</td><td>${c.court}</td><td>${fmtDate(c.next)}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('case',${i})">Edit</button></td></tr>`).join("")}</tbody></table></div>`;
 }
 function clients(){
  content.innerHTML=layout("Clients","Client directory and case relationships",`openModal('client')`)+
- `<div class="toolbar"><input class="filter" placeholder="Search clients..." oninput="filterTable('clientTable',this.value)"></div><div class="panel"><table id="clientTable"><thead><tr><th>Client</th><th>Phone</th><th>Email</th><th>Cases</th><th>Status</th></tr></thead><tbody>${state.clients.map(c=>`<tr><td><strong>${c.name}</strong><br><span class="muted">${c.id}</span></td><td>${c.phone}</td><td>${c.email}</td><td>${c.cases}</td><td>${badge(c.status)}</td></tr>`).join("")}</tbody></table></div>`;
+ `<div class="toolbar"><input class="filter" placeholder="Search clients..." oninput="filterTable('clientTable',this.value)"></div><div class="panel"><table id="clientTable"><thead><tr><th>Client</th><th>Phone</th><th>Email</th><th>Cases</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.clients.map((c,i)=>`<tr><td><strong>${c.name}</strong><br><span class="muted">${c.id}</span></td><td>${c.phone}</td><td>${c.email}</td><td>${c.cases}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('client',${i})">Edit</button></td></tr>`).join("")}</tbody></table></div>`;
 }
 function getHearingClient(h){
   if(h.clientId){ return state.clients.find(c=>c.id===h.clientId) || null; }
@@ -113,7 +113,7 @@ function sendHearingWhatsApp(index){
 }
 function hearings(){
  content.innerHTML=layout("Hearings","Upcoming court dates and proceedings",`openModal('hearing')`)+
- `<div class="panel"><table><thead><tr><th>Date</th><th>Time</th><th>Case</th><th>Client</th><th>Court</th><th>Stage</th><th>WhatsApp</th></tr></thead><tbody>${state.hearings.map((h,i)=>{const c=getHearingClient(h);return `<tr><td><strong>${fmtDate(h.date)}</strong></td><td>${h.time}</td><td><strong>${h.case}</strong><br><span class="muted">${h.title}</span></td><td>${c?c.name:"—"}</td><td>${h.court}</td><td>${badge(h.stage)}</td><td><button class="secondary" onclick="sendHearingWhatsApp(${i})">WhatsApp</button></td></tr>`}).join("")}</tbody></table></div>`;
+ `<div class="panel"><table><thead><tr><th>Date</th><th>Time</th><th>Case</th><th>Client</th><th>Court</th><th>Stage</th><th>Action</th></tr></thead><tbody>${state.hearings.map((h,i)=>{const c=getHearingClient(h);return `<tr><td><strong>${fmtDate(h.date)}</strong></td><td>${h.time}</td><td><strong>${h.case}</strong><br><span class="muted">${h.title}</span></td><td>${c?c.name:"—"}</td><td>${h.court}</td><td>${badge(h.stage)}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary" onclick="openEditModal('hearing',${i})">Edit</button><button class="secondary" onclick="sendHearingWhatsApp(${i})">WhatsApp</button></div></td></tr>`}).join("")}</tbody></table></div>`;
 }
 function calendar(){
  content.innerHTML=layout("Calendar","Court hearings, appointments and deadlines")+`<div class="panel"><div class="panel-head"><h3>September 2026</h3><span>Monthly view</span></div><div class="list">${state.hearings.map(h=>`<div class="list-row"><div class="date-box"><b>${new Date(h.date+"T00:00:00").getDate()}</b><small>SEP</small></div><div class="list-main"><strong>${h.title}</strong><small>${h.time} • ${h.court} • ${h.case}</small></div><div>${badge(h.stage)}</div></div>`).join("")}</div></div>`;
@@ -124,7 +124,7 @@ function documents(){
 }
 function tasks(){
  content.innerHTML=layout("Tasks","Work assigned across your practice",`openModal('task')`)+
- `<div class="panel"><table><thead><tr><th>Task</th><th>Case</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead><tbody>${state.tasks.map(t=>`<tr><td><strong>${t.title}</strong></td><td>${t.case}</td><td>${fmtDate(t.due)}</td><td>${badge(t.priority)}</td><td>${badge(t.status)}</td></tr>`).join("")}</tbody></table></div>`;
+ `<div class="panel"><table><thead><tr><th>Task</th><th>Case</th><th>Due</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.tasks.map((t,i)=>`<tr><td><strong>${t.title}</strong></td><td>${t.case}</td><td>${fmtDate(t.due)}</td><td>${badge(t.priority)}</td><td>${badge(t.status)}</td><td><button class="secondary" onclick="openEditModal('task',${i})">Edit</button></td></tr>`).join("")}</tbody></table></div>`;
 }
 function finance(){
  content.innerHTML=layout("Finance","Fees, payments, expenses and client ledgers")+`<div class="cards"><div class="stat"><div class="stat-top">Fees Received</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div><div class="stat"><div class="stat-top">Expenses</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div><div class="stat"><div class="stat-top">Net Income</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div></div><div class="panel"><div class="empty">Financial transactions will be enabled in the next build phase.</div></div>`;
@@ -151,13 +151,57 @@ function openModal(type){
  const titles={case:"Create New Case",client:"Create New Client",hearing:"Schedule Hearing",task:"Create Task",document:"Add Document"};
  document.getElementById("modalTitle").textContent=titles[type];
  const forms={
- case:`<div class="form-grid"><div class="field"><label>Case Number</label><input id="f1" placeholder="OS 123/2026"></div><div class="field"><label>Case Title</label><input id="f2" placeholder="Party v. Party"></div><div class="field"><label>Client</label><select id="f3"><option value="">Select a client</option>${state.clients.map(c=>`<option value="${c.id}">${c.name} (${c.id})</option>`).join("")}</select></div><div class="field"><label>Court</label><input id="f4" placeholder="Court name"></div><div class="field"><label>Next Hearing</label><input id="f5" type="date"></div><div class="field"><label>Case Type</label><select id="f6"><option>Civil</option><option>Criminal</option><option>Writ</option><option>Family</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('case')">Save Case</button></div>`,
- client:`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1"></div><div class="field"><label>Phone</label><input id="f2"></div><div class="field"><label>Email</label><input id="f3"></div><div class="field"><label>Status</label><select id="f4"><option>Active</option><option>Inactive</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('client')">Save Client</button></div>`,
+ case:`<div class="form-grid"><div class="field"><label>Case Number</label><input id="f1" placeholder="OS 123/2026"></div><div class="field"><label>Case Title</label><input id="f2" placeholder="Party v. Party"></div><div class="field"><label>Client</label><select id="f3"><option value="">Select a client</option>${state.clients.map(c=>`<option value="${c.id}">${c.name} (${c.id})</option>`).join("")}</select></div><div class="field"><label>Court</label><input id="f4" placeholder="Court name"></div><div class="field"><label>Next Hearing</label><input id="f5" type="date"></div><div class="field"><label>Case Type</label><select id="f6"><option>Civil</option><option>Criminal</option><option>Writ</option><option>Family</option></select></div><div class="field"><label>Status</label><select id="f7"><option>Active</option><option>Pending</option><option>Reserved</option><option>Disposed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('case')">Save Case</button></div>`,
+ client:`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1"></div><div class="field"><label>Phone / WhatsApp</label><input id="f2"></div><div class="field"><label>Email</label><input id="f3"></div><div class="field"><label>Status</label><select id="f4"><option>Active</option><option>Inactive</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('client')">Save Client</button></div>`,
  hearing:`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date"></div><div class="field"><label>Time</label><input id="f2" type="time"></div><div class="field"><label>Case Number</label><select id="f3" onchange="syncHearingCase()"><option value="">Select a case</option>${state.cases.map(c=>`<option value="${c.id}">${c.number} — ${c.client}</option>`).join("")}</select></div><div class="field"><label>Case Title</label><input id="f4" readonly></div><div class="field"><label>Client</label><input id="fClient" readonly placeholder="Selected from case"></div><div class="field full"><label>Court</label><input id="f5" placeholder="Court name"></div><div class="field"><label>Stage</label><input id="f6" placeholder="Evidence / Arguments"></div></div><div class="notice" style="margin-top:14px">When you schedule this hearing, WhatsApp will open with the hearing details prepared for the selected client.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('hearing')">Schedule & WhatsApp</button></div>`,
- task:`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1"></div><div class="field"><label>Case</label><input id="f2"></div><div class="field"><label>Due Date</label><input id="f3" type="date"></div><div class="field"><label>Priority</label><select id="f4"><option>High</option><option>Medium</option><option>Low</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('task')">Save Task</button></div>`,
+ task:`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1"></div><div class="field"><label>Case</label><input id="f2"></div><div class="field"><label>Due Date</label><input id="f3" type="date"></div><div class="field"><label>Priority</label><select id="f4"><option>High</option><option>Medium</option><option>Low</option></select></div><div class="field"><label>Status</label><select id="f5"><option>Pending</option><option>In Progress</option><option>Completed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('task')">Save Task</button></div>`,
  document:`<div class="field"><label>Document Name</label><input placeholder="e.g. Petition.pdf"><br><label>Case</label><input placeholder="Case number"><br><label>Category</label><select><option>Petition</option><option>Order</option><option>Evidence</option><option>Other</option></select></div><div class="notice" style="margin-top:14px">File upload will be connected to secure Supabase Storage in the next phase.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Close</button></div>`
  };
  document.getElementById("modalBody").innerHTML=forms[type];document.getElementById("modal").classList.remove("hidden");
+}
+
+function openEditModal(type,index){
+ const item=state[type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':'tasks'][index];
+ if(!item) return;
+ document.getElementById("modalTitle").textContent=`Edit ${type.charAt(0).toUpperCase()+type.slice(1)}`;
+ let form="";
+ if(type==='client'){
+  form=`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1" value="${esc(item.name)}"></div><div class="field"><label>Phone / WhatsApp</label><input id="f2" value="${esc(item.phone)}"></div><div class="field"><label>Email</label><input id="f3" value="${esc(item.email)}"></div><div class="field"><label>Status</label><select id="f4"><option ${item.status==='Active'?'selected':''}>Active</option><option ${item.status==='Inactive'?'selected':''}>Inactive</option></select></div></div>`;
+ } else if(type==='case'){
+  form=`<div class="form-grid"><div class="field"><label>Case Number</label><input id="f1" value="${esc(item.number)}"></div><div class="field"><label>Case Title</label><input id="f2" value="${esc(item.title)}"></div><div class="field"><label>Client</label><select id="f3">${state.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===item.clientId?'selected':''}>${esc(c.name)} (${esc(c.id)})</option>`).join("")}</select></div><div class="field"><label>Court</label><input id="f4" value="${esc(item.court)}"></div><div class="field"><label>Next Hearing</label><input id="f5" type="date" value="${esc(item.next)}"></div><div class="field"><label>Case Type</label><select id="f6">${['Civil','Criminal','Writ','Family'].map(x=>`<option ${x===item.type?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="f7">${['Active','Pending','Reserved','Disposed'].map(x=>`<option ${x===item.status?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
+ } else if(type==='hearing'){
+  const relatedCase=state.cases.find(c=>c.number===item.case || c.id===item.case || c.id===item.caseId);
+  const caseId=relatedCase?relatedCase.id:'';
+  form=`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date" value="${esc(item.date)}"></div><div class="field"><label>Time</label><input id="f2" type="text" value="${esc(item.time)}" placeholder="10:30 AM"></div><div class="field"><label>Case Number</label><select id="f3" onchange="syncHearingCase()"><option value="">Select a case</option>${state.cases.map(c=>`<option value="${esc(c.id)}" ${c.id===caseId?'selected':''}>${esc(c.number)} — ${esc(c.client)}</option>`).join("")}</select></div><div class="field"><label>Case Title</label><input id="f4" readonly value="${esc(item.title)}"></div><div class="field"><label>Client</label><input id="fClient" readonly></div><div class="field full"><label>Court</label><input id="f5" value="${esc(item.court)}"></div><div class="field"><label>Stage</label><input id="f6" value="${esc(item.stage)}"></div></div>`;
+ } else if(type==='task'){
+  form=`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1" value="${esc(item.title)}"></div><div class="field"><label>Case</label><input id="f2" value="${esc(item.case)}"></div><div class="field"><label>Due Date</label><input id="f3" type="date" value="${esc(item.due)}"></div><div class="field"><label>Priority</label><select id="f4">${['High','Medium','Low'].map(x=>`<option ${x===item.priority?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="f5">${['Pending','In Progress','Completed'].map(x=>`<option ${x===item.status?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
+ }
+ document.getElementById("modalBody").innerHTML=form+`<div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="updateRecord('${type}',${index})">Update ${type.charAt(0).toUpperCase()+type.slice(1)}</button></div>`;
+ document.getElementById("modal").classList.remove("hidden");
+ if(type==='hearing') syncHearingCase();
+}
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function updateRecord(type,index){
+ const key=type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':'tasks';
+ const item=state[key][index];
+ if(!item) return;
+ if(type==='client'){
+  const oldName=item.name; item.name=document.getElementById('f1').value.trim()||oldName; item.phone=document.getElementById('f2').value.trim()||'—'; item.email=document.getElementById('f3').value.trim()||'—'; item.status=document.getElementById('f4').value;
+  state.cases.forEach(c=>{if(c.clientId===item.id || c.client===oldName){c.client=item.name;c.clientId=item.id;}});
+ } else if(type==='case'){
+  const oldNumber=item.number, oldClientId=item.clientId;
+  const client=state.clients.find(c=>c.id===document.getElementById('f3').value); if(!client){alert('Please select a client.');return;}
+  item.number=document.getElementById('f1').value.trim()||oldNumber; item.title=document.getElementById('f2').value.trim()||'Untitled'; item.client=client.name; item.clientId=client.id; item.court=document.getElementById('f4').value.trim()||'—'; item.next=document.getElementById('f5').value||item.next; item.type=document.getElementById('f6').value; item.status=document.getElementById('f7').value;
+  if(oldNumber!==item.number){state.hearings.forEach(h=>{if(h.case===oldNumber) h.case=item.number;});state.tasks.forEach(t=>{if(t.case===oldNumber)t.case=item.number;});}
+  state.clients.forEach(c=>{c.cases=state.cases.filter(x=>x.clientId===c.id || x.client===c.name).length;});
+ } else if(type==='hearing'){
+  const relatedCase=state.cases.find(c=>c.id===document.getElementById('f3').value); if(!relatedCase){alert('Please select a case.');return;}
+  const client=getHearingClient({clientId:relatedCase.clientId,case:relatedCase.number}); if(!client){alert('The selected case is not linked to a client.');return;}
+  item.date=document.getElementById('f1').value||item.date; item.time=document.getElementById('f2').value||item.time; item.case=relatedCase.number; item.title=relatedCase.title; item.court=document.getElementById('f5').value.trim()||relatedCase.court||'Court'; item.stage=document.getElementById('f6').value.trim()||'Hearing'; item.clientId=client.id;
+ } else if(type==='task'){
+  item.title=document.getElementById('f1').value.trim()||item.title; item.case=document.getElementById('f2').value.trim()||'—'; item.due=document.getElementById('f3').value||item.due; item.priority=document.getElementById('f4').value; item.status=document.getElementById('f5').value;
+ }
+ save(); closeModal(); navigate(type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':'tasks');
 }
 function syncHearingCase(){
   const select=document.getElementById("f3");
@@ -178,7 +222,7 @@ function addRecord(type){
   const selectedClient=state.clients.find(c=>c.id===selectedClientId);
   if(!selectedClient){alert("Please select a client.");return}
   selectedClient.cases=(Number(selectedClient.cases)||0)+1;
-  state.cases.unshift({id:"CS-"+Date.now(),number:document.getElementById("f1").value||"New Case",title:document.getElementById("f2").value||"Untitled",client:selectedClient.name,clientId:selectedClient.id,court:document.getElementById("f4").value||"—",next:document.getElementById("f5").value||"2026-09-30",status:"Active",type:document.getElementById("f6").value})
+  state.cases.unshift({id:"CS-"+Date.now(),number:document.getElementById("f1").value||"New Case",title:document.getElementById("f2").value||"Untitled",client:selectedClient.name,clientId:selectedClient.id,court:document.getElementById("f4").value||"—",next:document.getElementById("f5").value||"2026-09-30",status:document.getElementById("f7")?.value||"Active",type:document.getElementById("f6").value})
 }
  if(type==="client"){state.clients.unshift({id:"CL-"+String(Date.now()).slice(-5),name:document.getElementById("f1").value||"New Client",phone:document.getElementById("f2").value||"—",email:document.getElementById("f3").value||"—",cases:0,status:document.getElementById("f4").value})}
  if(type==="hearing"){
@@ -198,7 +242,7 @@ function addRecord(type){
   else{alert(`Hearing saved, but ${client.name} does not have a valid WhatsApp/mobile number. Please update the client record.`);}
   return;
  }
- if(type==="task"){state.tasks.unshift({title:document.getElementById("f1").value||"New task",case:document.getElementById("f2").value||"—",due:document.getElementById("f3").value||"2026-09-30",priority:document.getElementById("f4").value,status:"Pending"})}
+ if(type==="task"){state.tasks.unshift({title:document.getElementById("f1").value||"New task",case:document.getElementById("f2").value||"—",due:document.getElementById("f3").value||"2026-09-30",priority:document.getElementById("f4").value,status:document.getElementById("f5")?.value||"Pending"})}
  save();closeModal();navigate(type==="case"?"cases":type==="client"?"clients":type==="hearing"?"hearings":"tasks")
 }
 navigate("dashboard");
