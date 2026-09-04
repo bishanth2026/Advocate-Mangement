@@ -139,12 +139,22 @@ const pages={dashboard,cases,clients,hearings,calendar,documents,tasks,finance,r
 if(auth.role==="super_admin") pages["central-control"]=function(){
  content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><button class="primary" onclick="addAdminDemo()">＋ Create Admin</button></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody><tr><td><strong>Demo Law Office</strong></td><td>Advocate Admin</td><td>${badge("Active")}</td><td>Office management</td></tr></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
 };
-function navigate(page){if(!pages[page]) return;document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));pages[page]();document.querySelector(".sidebar").classList.remove("open")}
+function navigate(page){if(!pages[page]) return;document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));pages[page]();setMobileMenu(false)}
 function addAdminDemo(){alert("Admin creation is a demo action now. Supabase will create the real account securely in the next phase.")}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
 const mobileMenu=document.getElementById("mobileMenu");
-if(mobileMenu){mobileMenu.addEventListener("click",()=>document.querySelector(".sidebar").classList.toggle("open"));}
-document.getElementById("mobileMenu").onclick=()=>document.querySelector(".sidebar").classList.toggle("open");
+const mobileOverlay=document.getElementById("mobileOverlay");
+function setMobileMenu(open){
+  const sidebar=document.querySelector(".sidebar");
+  if(!sidebar) return;
+  sidebar.classList.toggle("open",!!open);
+  if(mobileOverlay){ mobileOverlay.classList.toggle("open",!!open); mobileOverlay.setAttribute("aria-hidden",open?"false":"true"); }
+  document.body.classList.toggle("menu-open",!!open);
+  if(mobileMenu) mobileMenu.setAttribute("aria-expanded",open?"true":"false");
+}
+if(mobileMenu){ mobileMenu.addEventListener("click",()=>setMobileMenu(!document.querySelector(".sidebar")?.classList.contains("open"))); }
+if(mobileOverlay){ mobileOverlay.addEventListener("click",()=>setMobileMenu(false)); }
+document.addEventListener("keydown",e=>{if(e.key==="Escape") setMobileMenu(false);});
 document.getElementById("modalClose").onclick=()=>document.getElementById("modal").classList.add("hidden");
 document.getElementById("globalSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){navigate("cases");document.getElementById("caseFilter").value=e.target.value;filterTable("caseTable",e.target.value)}});
 
