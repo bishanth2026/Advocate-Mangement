@@ -137,3 +137,147 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 
 /* Super Admin dashboard banner */
 .super-admin-hero{background-image:url("assets/super-admin-banner.png");}
+
+/* =========================================================
+   MOBILE-FIRST RESPONSIVE PASS
+   Keeps every control readable and touch-friendly on phones.
+   ========================================================= */
+@media (max-width: 720px){
+  body{overflow-x:hidden}
+  #app{min-width:0}
+  .sidebar{width:min(290px,88vw);padding:16px 12px;box-shadow:18px 0 45px rgba(0,0,0,.24)}
+  .main{min-width:0}
+  .topbar{height:auto;min-height:60px;padding:10px 12px;gap:9px}
+  .mobile-menu{width:42px;height:42px;flex:0 0 42px;border-radius:10px;background:#eef3ff;color:#172554;font-size:21px}
+  .search{display:flex;width:auto;flex:1;min-width:0;max-width:none;padding:0 9px}
+  .search input{font-size:12px;min-width:0}
+  .top-actions{gap:6px;flex:0 0 auto}
+  .icon-btn{width:40px;height:40px;padding:0;display:grid;place-items:center}
+  .user-chip{height:40px;padding:0 10px;white-space:nowrap}
+  .content{padding:14px 12px 24px;max-width:none}
+  .page-title{align-items:stretch;margin-bottom:15px;gap:10px}
+  .page-title h1{font-size:20px;line-height:1.2}
+  .page-title p{font-size:11px;line-height:1.45}
+  .page-title .primary{white-space:nowrap;padding:11px 13px;min-height:42px}
+  .cards{grid-template-columns:1fr;gap:10px}
+  .stat{min-height:112px;padding:16px}
+  .stat-value{font-size:25px;margin-top:8px}
+  .grid-2{grid-template-columns:1fr;gap:12px}
+  .quick-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .quick{min-height:100px;padding:12px}
+  .quick strong{font-size:12px}
+  .quick small{font-size:10px;line-height:1.35}
+  .toolbar{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:11px}
+  .toolbar .filter:first-child{width:100%}
+  .filter{min-height:42px;font-size:12px;padding:10px}
+
+  /* Convert data tables into readable mobile cards instead of horizontal scrolling. */
+  .panel{overflow:hidden}
+  .panel-body{overflow:hidden}
+  table, table#caseTable, table#clientTable, table#hearingTable, table#taskTable, table#centralControlTable{
+    width:100%;min-width:0;display:block;border-collapse:separate;border-spacing:0
+  }
+  table thead{display:none}
+  table tbody{display:block;width:100%}
+  table tbody tr{display:block;width:100%;padding:10px 12px;border-bottom:1px solid #e7ebf2;background:#fff}
+  table tbody tr:last-child{border-bottom:0}
+  table tbody tr:hover{background:#fff}
+  table tbody td{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;padding:8px 0;border-bottom:1px dashed #e8ebf0;font-size:12px;line-height:1.4;text-align:right;overflow-wrap:anywhere}
+  table tbody td:last-child{border-bottom:0;padding-bottom:2px}
+  table tbody td::before{content:attr(data-label);font-size:10px;font-weight:700;color:#7a8494;text-align:left;flex:0 0 34%;max-width:42%}
+  table tbody td > *{max-width:66%}
+  table tbody td .secondary{min-height:38px;padding:8px 12px}
+
+  #caseTable tbody td:nth-child(1)::before{content:"Case"}
+  #caseTable tbody td:nth-child(2)::before{content:"Client"}
+  #caseTable tbody td:nth-child(3)::before{content:"Court"}
+  #caseTable tbody td:nth-child(4)::before{content:"Next Hearing"}
+  #caseTable tbody td:nth-child(5)::before{content:"Status"}
+  #caseTable tbody td:nth-child(6)::before{content:"Action"}
+  #clientTable tbody td:nth-child(1)::before{content:"Client"}
+  #clientTable tbody td:nth-child(2)::before{content:"Phone / WhatsApp"}
+  #clientTable tbody td:nth-child(3)::before{content:"Email"}
+  #clientTable tbody td:nth-child(4)::before{content:"Cases"}
+  #clientTable tbody td:nth-child(5)::before{content:"Status"}
+  #clientTable tbody td:nth-child(6)::before{content:"Action"}
+  #hearingTable tbody td:nth-child(1)::before{content:"Date"}
+  #hearingTable tbody td:nth-child(2)::before{content:"Time"}
+  #hearingTable tbody td:nth-child(3)::before{content:"Case"}
+  #hearingTable tbody td:nth-child(4)::before{content:"Client"}
+  #hearingTable tbody td:nth-child(5)::before{content:"Court"}
+  #hearingTable tbody td:nth-child(6)::before{content:"Stage"}
+  #hearingTable tbody td:nth-child(7)::before{content:"Actions"}
+  #taskTable tbody td:nth-child(1)::before{content:"Task"}
+  #taskTable tbody td:nth-child(2)::before{content:"Case"}
+  #taskTable tbody td:nth-child(3)::before{content:"Due Date"}
+  #taskTable tbody td:nth-child(4)::before{content:"Priority"}
+  #taskTable tbody td:nth-child(5)::before{content:"Status"}
+  #taskTable tbody td:nth-child(6)::before{content:"Action"}
+  #centralControlTable tbody td:nth-child(1)::before{content:"Organization"}
+  #centralControlTable tbody td:nth-child(2)::before{content:"Administrator"}
+  #centralControlTable tbody td:nth-child(3)::before{content:"Status"}
+  #centralControlTable tbody td:nth-child(4)::before{content:"Access"}
+
+  #hearingTable tbody td:last-child>div{display:flex!important;justify-content:flex-end;gap:6px;flex-wrap:wrap;max-width:66%}
+  #hearingTable tbody td:last-child .secondary{flex:1 1 auto}
+
+  .badge{white-space:nowrap}
+  .panel-head{padding:12px 13px;gap:8px;align-items:flex-start}
+  .panel-head h3{font-size:13px}
+  .panel-head span{font-size:10px;line-height:1.35}
+  .panel-head .primary,.panel-head .secondary{min-height:40px;white-space:nowrap}
+  .list-row{padding:12px 13px;gap:10px}
+  .list-main{min-width:0}
+  .list-main strong{font-size:11px;line-height:1.35;display:block;overflow-wrap:anywhere}
+  .list-main small{font-size:9px;line-height:1.4}
+
+  .dashboard-hero{width:100%;height:auto;aspect-ratio:1335/220;min-height:72px;background-size:100% 100%;border-radius:10px;margin-bottom:12px}
+  .notice{font-size:10px;line-height:1.5;padding:10px 11px}
+
+  .modal{padding:10px;align-items:center}
+  .modal-card{width:100%;max-height:92vh;overflow:auto;border-radius:14px;padding:15px}
+  .modal-head{position:sticky;top:0;background:inherit;z-index:2;padding-bottom:10px;margin-bottom:12px}
+  .modal-head h3{font-size:16px}
+  .form-grid{grid-template-columns:1fr;gap:11px}
+  .field.full{grid-column:auto}
+  .field label{font-size:11px}
+  .field input,.field select,.field textarea{min-height:42px;font-size:13px;padding:10px}
+  .field textarea{min-height:100px}
+  .form-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .form-actions button{width:100%;min-height:44px}
+
+  .admin-grid,.admin-control-grid{grid-template-columns:1fr;gap:10px}
+  .admin-card{padding:17px;min-height:130px}
+  .admin-card h3{font-size:16px}
+  .admin-card p{font-size:11px}
+  .control-tile{padding:14px}
+}
+
+@media (max-width: 520px){
+  .topbar{flex-wrap:wrap}
+  .search{order:3;flex-basis:100%;width:100%;height:40px}
+  .top-actions{margin-left:auto}
+  .user-chip span{display:none}
+  .content{padding:12px 10px 22px}
+  .page-title{display:flex;flex-direction:column}
+  .page-title .primary{align-self:flex-start}
+  .quick-grid{grid-template-columns:1fr}
+  .quick{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .quick small{text-align:right}
+  .stat{min-height:105px}
+  .modal{padding:6px}
+  .modal-card{max-height:95vh;padding:13px}
+  .form-actions{grid-template-columns:1fr}
+}
+
+@media (max-width: 360px){
+  .topbar{padding:8px}
+  .mobile-menu{width:40px;flex-basis:40px}
+  .icon-btn{display:none}
+  .content{padding-left:8px;padding-right:8px}
+  table tbody tr{padding:9px 10px}
+  table tbody td{font-size:11px;gap:8px}
+  table tbody td::before{font-size:9px;flex-basis:38%}
+  table tbody td > *{max-width:60%}
+  .page-title h1{font-size:19px}
+}
