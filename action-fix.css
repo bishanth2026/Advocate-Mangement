@@ -32,27 +32,43 @@ table tbody td:last-child > div[style*="display:flex"] > .secondary,
   font-size:11px !important;
 }
 
-/* Client Meetings: give the Action column enough room so all three
-   buttons (Edit, Delete, WhatsApp) remain visible on desktop. */
-@media(min-width:721px){
-  .grid-2 > .panel:nth-child(2) table{
-    width:100% !important;
-    min-width:0 !important;
-    table-layout:fixed !important;
-  }
-  .grid-2 > .panel:nth-child(2) th:last-child,
-  .grid-2 > .panel:nth-child(2) td:last-child{
-    width:210px !important;
-    min-width:210px !important;
-  }
-  .grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"]{
-    width:100% !important;
-    min-width:0 !important;
-    max-width:100% !important;
-  }
-  .grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"] > .secondary{
-    padding:8px 8px !important;
-  }
+/* Client Meetings: keep the same clean, readable table treatment as
+   Discussion History while fitting all five columns in the panel. */
+.grid-2 > .panel:nth-child(2) table{
+  width:100% !important;
+  min-width:0 !important;
+  table-layout:fixed !important;
+}
+
+.grid-2 > .panel:nth-child(2) th,
+.grid-2 > .panel:nth-child(2) td{
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+  vertical-align:middle !important;
+}
+
+.grid-2 > .panel:nth-child(2) th:nth-child(1),
+.grid-2 > .panel:nth-child(2) td:nth-child(1){width:16% !important;}
+.grid-2 > .panel:nth-child(2) th:nth-child(2),
+.grid-2 > .panel:nth-child(2) td:nth-child(2){width:15% !important;}
+.grid-2 > .panel:nth-child(2) th:nth-child(3),
+.grid-2 > .panel:nth-child(2) td:nth-child(3){width:18% !important;}
+.grid-2 > .panel:nth-child(2) th:nth-child(4),
+.grid-2 > .panel:nth-child(2) td:nth-child(4){width:15% !important;}
+.grid-2 > .panel:nth-child(2) th:nth-child(5),
+.grid-2 > .panel:nth-child(2) td:nth-child(5){width:36% !important;}
+
+.grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"]{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  gap:4px !important;
+}
+
+.grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"] > .secondary{
+  padding:7px 7px !important;
+  font-size:10px !important;
+  flex:1 1 0 !important;
 }
 
 @media(max-width:720px){
@@ -69,5 +85,21 @@ table tbody td:last-child > div[style*="display:flex"] > .secondary,
     width:auto !important;
     min-width:0 !important;
     padding:8px 9px !important;
+  }
+
+  .grid-2 > .panel:nth-child(2) table{
+    table-layout:fixed !important;
+  }
+
+  .grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"]{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    gap:3px !important;
+  }
+
+  .grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"] > .secondary{
+    padding:6px 4px !important;
+    font-size:9px !important;
   }
 }
