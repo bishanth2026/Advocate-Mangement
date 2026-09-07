@@ -1,0 +1,50 @@
+/* AdvocateDesk action-button layout fix */
+
+/* Keep action buttons together instead of stacking vertically. */
+table tbody td:last-child{
+  white-space:nowrap;
+}
+
+table tbody td:last-child > div[style*="display:flex"],
+.meeting-actions{
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:6px !important;
+  width:max-content !important;
+  min-width:max-content !important;
+  max-width:none !important;
+}
+
+table tbody td:last-child > div[style*="display:flex"] > .secondary,
+.meeting-actions .secondary{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+  padding:8px 10px !important;
+  font-size:11px !important;
+}
+
+@media(max-width:720px){
+  table tbody td:last-child > div[style*="display:flex"],
+  .meeting-actions{
+    flex-wrap:nowrap !important;
+    width:max-content !important;
+    min-width:max-content !important;
+    max-width:none !important;
+  }
+
+  table tbody td:last-child > div[style*="display:flex"] > .secondary,
+  .meeting-actions .secondary{
+    width:auto !important;
+    min-width:0 !important;
+    padding:8px 9px !important;
+  }
+}
