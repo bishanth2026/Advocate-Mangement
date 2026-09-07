@@ -32,6 +32,13 @@ table tbody td:last-child > div[style*="display:flex"] > .secondary,
   font-size:11px !important;
 }
 
+/* Client Management: make Discussion History and Client Meetings
+   equal-width panels for a balanced layout. */
+.grid-2:has(> .panel:nth-child(2) table thead th:nth-child(5)){
+  grid-template-columns:1fr 1fr !important;
+  align-items:stretch !important;
+}
+
 /* Client Meetings: keep the same clean, readable table treatment as
    Discussion History while fitting all five columns in the panel. */
 .grid-2 > .panel:nth-child(2) table{
