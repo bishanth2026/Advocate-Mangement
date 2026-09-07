@@ -32,6 +32,29 @@ table tbody td:last-child > div[style*="display:flex"] > .secondary,
   font-size:11px !important;
 }
 
+/* Client Meetings: give the Action column enough room so all three
+   buttons (Edit, Delete, WhatsApp) remain visible on desktop. */
+@media(min-width:721px){
+  .grid-2 > .panel:nth-child(2) table{
+    width:100% !important;
+    min-width:0 !important;
+    table-layout:fixed !important;
+  }
+  .grid-2 > .panel:nth-child(2) th:last-child,
+  .grid-2 > .panel:nth-child(2) td:last-child{
+    width:210px !important;
+    min-width:210px !important;
+  }
+  .grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"]{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+  }
+  .grid-2 > .panel:nth-child(2) td:last-child > div[style*="display:flex"] > .secondary{
+    padding:8px 8px !important;
+  }
+}
+
 @media(max-width:720px){
   table tbody td:last-child > div[style*="display:flex"],
   .meeting-actions{
