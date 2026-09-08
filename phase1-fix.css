@@ -6,4 +6,17 @@
 #p1Modal{overflow:hidden}
 #p1Modal .modal-card{max-height:calc(100vh - 40px);overflow-y:auto}
 .p1-modal-open{overflow:hidden}
-@media(max-width:720px){.p1-cal-grid{overflow-x:auto;grid-template-columns:repeat(7,minmax(105px,1fr));}.p1-cal-cell{min-height:95px}.p1-cal-actions{margin-top:12px}.p1-cal-actions .secondary{min-height:42px}}
+.p1-fee-summary-panel .panel-head{align-items:flex-start;gap:16px}
+.p1-fee-inline-stats{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;font-size:12px}
+.p1-fee-inline-stats span{padding:7px 10px;border:1px solid #e3e8f0;border-radius:7px;background:#f8fafc;white-space:nowrap}
+.p1-fee-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.p1-fee-table-wrap table{min-width:980px}
+@media(max-width:720px){
+  .p1-cal-grid{overflow-x:auto;grid-template-columns:repeat(7,minmax(105px,1fr))}
+  .p1-cal-cell{min-height:95px}
+  .p1-cal-actions{margin-top:12px}
+  .p1-cal-actions .secondary{min-height:42px}
+  .p1-fee-summary-panel .panel-head{display:block}
+  .p1-fee-inline-stats{justify-content:flex-start;margin-top:10px}
+  .p1-fee-table-wrap table{min-width:980px}
+}
