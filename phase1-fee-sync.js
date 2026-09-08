@@ -1,0 +1,45 @@
+/* Unified case-fee sync layer. Keeps Finance cards, case details and payments on one data source. */
+(function(){
+  const KEY='advocateDeskData';
+  function S(){const s=P1.state();s.caseFees=Array.isArray(s.caseFees)?s.caseFees:[];s.feePayments=Array.isArray(s.feePayments)?s.feePayments:[];return s}
+  function save(s){P1.save(s);window.dispatchEvent(new Event('advocateDeskFeeUpdated'));}
+  function num(v){const n=Number(v);return Number.isFinite(n)&&n>=0?n:0}
+  function findCase(s,id){return s.cases.find(c=>String(c.id)===String(id))||s.cases.find(c=>String(c.number)===String(id))}
+  function getFee(s,c){let f=s.caseFees.find(x=>String(x.caseId)===String(c.id));if(!f){f={id:'FEE-'+Date.now(),caseId:c.id,caseNumber:c.number,clientId:c.clientId||'',clientName:c.client||'',agreedFees:0,additionalCharges:0};s.caseFees.push(f)}return f}
+  function totals(s,f){const received=s.feePayments.filter(p=>String(p.caseId)===String(f.caseId)).reduce((a,p)=>a+num(p.amount),0);const agreed=num(f.agreedFees),additional=num(f.additionalCharges),payable=agreed+additional;return{agreed,additional,payable,received,balance:payable-received}}
+  function money(v){return '₹'+num(v).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function esc(v){return P1.esc(v)}
+  function setup(caseId){
+    const s=S();const c=caseId?findCase(s,caseId):s.cases[0];if(!c){alert('No cases are available. Create a case first.');return}
+    const f=getFee(s,c);P1.save(s);
+    const opts=s.cases.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(c.id)?'selected':''}>${esc(x.number)} — ${esc(x.client||'')}</option>`).join('');
+    p1OpenModal(caseId?'Edit Case Fee':'Add Case Fee',`<div class="form-grid"><div class="field full"><label>Case Number</label><select id="p1syncCase" onchange="p1SyncCaseChange()">${opts}</select></div><div class="field"><label>Client</label><input id="p1syncClient" value="${esc(c.client||'')}" readonly></div><div class="field"><label>Agreed Fees</label><input id="p1syncAgreed" type="number" min="0" step="0.01" value="${esc(f.agreedFees??0)}" oninput="p1SyncTotal()"></div><div class="field"><label>Additional Charges</label><input id="p1syncAdditional" type="number" min="0" step="0.01" value="${esc(f.additionalCharges??0)}" oninput="p1SyncTotal()"></div><div class="field"><label>Total Payable</label><input id="p1syncTotalPayable" value="${money(num(f.agreedFees)+num(f.additionalCharges))}" readonly></div></div><div class="fee-balance-note">Total Payable = Agreed Fees + Additional Charges</div><div class="form-actions">${P1.btn('Cancel','p1CloseModal()')} ${P1.btn('Save Case Fee','p1SyncSave()',true)}</div>`);setTimeout(p1SyncTotal,0)
+  }
+  window.p1SyncCaseChange=function(){const s=S(),id=document.getElementById('p1syncCase')?.value,c=findCase(s,id);if(!c)return;const f=getFee(s,c);document.getElementById('p1syncClient').value=c.client||'';document.getElementById('p1syncAgreed').value=f.agreedFees??0;document.getElementById('p1syncAdditional').value=f.additionalCharges??0;p1SyncTotal()}
+  window.p1SyncTotal=function(){const a=num(document.getElementById('p1syncAgreed')?.value),b=num(document.getElementById('p1syncAdditional')?.value),e=document.getElementById('p1syncTotalPayable');if(e)e.value=money(a+b)}
+  window.p1SyncSave=function(){const s=S(),id=document.getElementById('p1syncCase')?.value,c=findCase(s,id);if(!c){alert('Select a case number.');return}const f=getFee(s,c);f.caseId=c.id;f.caseNumber=c.number;f.clientId=c.clientId||'';f.clientName=c.client||'';f.agreedFees=num(document.getElementById('p1syncAgreed')?.value);f.additionalCharges=num(document.getElementById('p1syncAdditional')?.value);save(s);p1CloseModal();setTimeout(()=>{if(typeof window.p1FinalFinance==='function')window.p1FinalFinance();else if(typeof window.p1Finance==='function')window.p1Finance();},20)};
+  function render(){
+    const s=S();const fees=s.caseFees;const agreed=fees.reduce((a,f)=>a+num(f.agreedFees),0),additional=fees.reduce((a,f)=>a+num(f.additionalCharges),0),received=s.feePayments.reduce((a,p)=>a+num(p.amount),0),payable=agreed+additional,balance=payable-received;
+    const c=P1.content();if(!c)return;
+    const vals=c.querySelectorAll('#p1UnifiedFeeCards .stat-value');if(vals.length===4){[agreed,additional,received,balance].forEach((v,i)=>vals[i].textContent=money(v))}
+    const summary=c.querySelector('#p1UnifiedFeeSummary');if(summary){const spans=summary.querySelectorAll('.p1-fee-inline-stats span');[payable,received,balance].forEach((v,i)=>{if(spans[i])spans[i].innerHTML=spans[i].textContent.split(' ')[0]+' <strong>'+money(v)+'</strong>'})}
+    const body=c.querySelector('#p1UnifiedFeeRows');if(body){body.innerHTML=fees.map(f=>{const cs=findCase(s,f.caseId),t=totals(s,f);return `<tr><td><strong>${esc(cs?.number||f.caseNumber||'—')}</strong><br><span class="muted">${esc(cs?.title||'')}</span></td><td>${esc(cs?.client||f.clientName||'—')}</td><td>${money(t.agreed)}</td><td>${money(t.additional)}</td><td><strong>${money(t.payable)}</strong></td><td>${money(t.received)}</td><td><strong>${money(t.balance)}</strong></td><td>${P1.btn('Fee Setup',`p1SyncSetup(${JSON.stringify(f.caseId)})`)} ${P1.btn('＋ Payment',`p1FeePayment(${JSON.stringify(f.caseId)})`)}</td></tr>`}).join('')||'<tr><td colspan="8"><div class="empty">No case fees recorded yet. Use “Add Case Fee”.</div></td></tr>'}
+  }
+  window.p1SyncSetup=setup;
+  window.p1RenderFeeSync=render;
+  function patchFinance(){
+    if(document.querySelector('.nav-item.active')?.dataset.page!=='finance')return;
+    const c=P1.content();if(!c)return;
+    const s=S();const fees=s.caseFees;const agreed=fees.reduce((a,f)=>a+num(f.agreedFees),0),additional=fees.reduce((a,f)=>a+num(f.additionalCharges),0),received=s.feePayments.reduce((a,p)=>a+num(p.amount),0),payable=agreed+additional,balance=payable-received;
+    let cards=c.querySelector('#p1UnifiedFeeCards');
+    if(!cards){cards=c.querySelector('.cards');if(cards){cards.id='p1UnifiedFeeCards';cards.innerHTML=`<div class="stat"><div class="stat-top">Agreed Fees <span>₹</span></div><div class="stat-value">${money(agreed)}</div><div class="stat-foot">Across all case fees</div></div><div class="stat"><div class="stat-top">Additional Charges <span>＋</span></div><div class="stat-value">${money(additional)}</div><div class="stat-foot">Added above agreed fees</div></div><div class="stat"><div class="stat-top">Amount Received <span>✓</span></div><div class="stat-value">${money(received)}</div><div class="stat-foot">Case fee payments</div></div><div class="stat"><div class="stat-top">Outstanding Fees <span>₹</span></div><div class="stat-value">${money(balance)}</div><div class="stat-foot">Total payable less received</div></div>`}}
+    if(cards){const v=cards.querySelectorAll('.stat-value');[agreed,additional,received,balance].forEach((x,i)=>{if(v[i])v[i].textContent=money(x)})}
+    const detail=c.querySelector('#p1UnifiedFeeDetails');if(detail){const b=detail.querySelector('tbody');if(b){b.innerHTML=fees.map(f=>{const cs=findCase(s,f.caseId),t=totals(s,f);return `<tr><td><strong>${esc(cs?.number||f.caseNumber||'—')}</strong><br><span class="muted">${esc(cs?.title||'')}</span></td><td>${esc(cs?.client||f.clientName||'—')}</td><td>${money(t.agreed)}</td><td>${money(t.additional)}</td><td><strong>${money(t.payable)}</strong></td><td>${money(t.received)}</td><td><strong>${money(t.balance)}</strong></td><td>${P1.btn('Fee Setup',`p1SyncSetup(${JSON.stringify(f.caseId)})`)} ${P1.btn('＋ Payment',`p1FeePayment(${JSON.stringify(f.caseId)})`)}</td></tr>`}).join('')||'<tr><td colspan="8"><div class="empty">No case fees recorded yet. Use “Add Case Fee”.</div></td></tr>'}}}
+  }
+  // Intercept the Finance entry point so the legacy renderer cannot overwrite the unified view.
+  const oldFinal=window.p1FinalFinance;
+  function unifiedFinance(){if(typeof oldFinal==='function')oldFinal();setTimeout(patchFinance,10)}
+  window.p1FinalFinance=unifiedFinance;
+  document.addEventListener('advocateDeskFeeUpdated',()=>{setTimeout(()=>{if(document.querySelector('.nav-item.active')?.dataset.page==='finance'){if(typeof window.p1FinalFinance==='function')window.p1FinalFinance()}},20)});
+  document.addEventListener('click',e=>{if(e.target.closest?.('.nav-item[data-page="finance"]'))setTimeout(patchFinance,50)},true);
+})();
