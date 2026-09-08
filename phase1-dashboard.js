@@ -7,12 +7,39 @@
   function isSuperAdmin(){
     try{return !!(window.ADAuth&&ADAuth.get&&ADAuth.get()?.role==='super_admin')}catch(e){return false}
   }
-
+  function adminData(){
+    let a=[];try{a=JSON.parse(localStorage.getItem('advocateDeskAdmins')||'[]')}catch(e){a=[]}
+    if(!Array.isArray(a))a=[];
+    const active=a.filter(x=>String(x&&x.status||'Active').trim().toLowerCase()==='active').length;
+    return {total:a.length,active,disabled:Math.max(0,a.length-active),orgs:[...new Set(a.map(x=>String(x&&x.organization||'').trim()).filter(Boolean))].length};
+  }
+  function repairSuperAdminView(){
+    if(!isSuperAdmin())return;
+    const c=document.getElementById('content');if(!c)return;
+    c.querySelector('#p1DashboardFeeCards')?.remove();
+    c.querySelector('#p1DashboardFeeDetails')?.remove();
+    const cards=c.querySelector('.cards');if(!cards)return;
+    const stats=cards.querySelectorAll('.stat');if(stats.length<4)return;
+    const d=adminData();
+    const values=[d.orgs,d.total,d.active,d.disabled];
+    const labels=['Organizations','Admin Accounts','Active Admins','Disabled Accounts'];
+    const foot=['Law offices managed','Administrator accounts · View all','Currently enabled · View all','Access disabled · View all'];
+    stats.forEach(function(card,i){
+      if(i>3)return;
+      const top=card.querySelector('.stat-top'),val=card.querySelector('.stat-value'),ft=card.querySelector('.stat-foot');
+      if(top&&top.textContent.trim()!==labels[i])top.textContent=labels[i];
+      if(val)val.textContent=String(values[i]);
+      if(ft)ft.textContent=foot[i];
+      card.style.cursor='pointer';
+      card.onclick=function(){if(window.ADSuper&&ADSuper.go)ADSuper.go(i===0?'organizations':'admins')};
+    });
+  }
   function removeCustomerDashboardPanels(){
     const c=document.getElementById('content');
     if(!c)return;
     c.querySelector('#p1DashboardFeeCards')?.remove();
     c.querySelector('#p1DashboardFeeDetails')?.remove();
+    repairSuperAdminView();
   }
 
   function feeSummary(s){
@@ -109,7 +136,13 @@
   }
 
   function start(){
-    if(isSuperAdmin()){removeCustomerDashboardPanels();return}
+    if(isSuperAdmin()){
+      removeCustomerDashboardPanels();
+      setTimeout(repairSuperAdminView,100);
+      setTimeout(repairSuperAdminView,400);
+      setTimeout(repairSuperAdminView,900);
+      return;
+    }
     schedule();
     document.addEventListener('advocateDeskFeeUpdated',schedule);
     document.addEventListener('click',function(e){
@@ -117,10 +150,7 @@
     },true);
     const root=document.getElementById('content')||document.body;
     observer=new MutationObserver(function(){
-      if(patching||isSuperAdmin()){
-        if(isSuperAdmin())removeCustomerDashboardPanels();
-        return;
-      }
+      if(patching)return;
       const active=document.querySelector('.nav-item.active')?.dataset.page;
       if(active==='dashboard')schedule();
     });
