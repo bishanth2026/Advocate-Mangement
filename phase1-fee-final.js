@@ -1,92 +1,33 @@
-/* Final case-fee Finance renderer. Keeps case fees as the single source of truth. */
+/* Final case-fee Finance renderer. Case-fee balances stay case-specific; Amount Received includes both case-fee payments and Other Transaction income. */
 (function(){
   const KEY='advocateDeskData';
-  function state(){
-    const s=P1.state();
-    s.caseFees=Array.isArray(s.caseFees)?s.caseFees:[];
-    s.feePayments=Array.isArray(s.feePayments)?s.feePayments:[];
-    return s;
-  }
+  function state(){const s=P1.state();s.caseFees=Array.isArray(s.caseFees)?s.caseFees:[];s.feePayments=Array.isArray(s.feePayments)?s.feePayments:[];s.financeTransactions=Array.isArray(s.financeTransactions)?s.financeTransactions:[];return s}
   function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
   function esc(v){return P1.esc(v)}
-  function normalize(){
-    const s=state(); let changed=false;
-    s.caseFees.forEach(f=>{
-      let c=s.cases.find(x=>x.id===f.caseId);
-      if(!c&&f.caseNumber)c=s.cases.find(x=>String(x.number)===String(f.caseNumber));
-      if(c){
-        if(f.caseId!==c.id){f.caseId=c.id;changed=true}
-        if(f.caseNumber!==c.number){f.caseNumber=c.number;changed=true}
-        const clientId=c.clientId||'';
-        const clientName=c.client||'';
-        if(f.clientId!==clientId){f.clientId=clientId;changed=true}
-        if(f.clientName!==clientName){f.clientName=clientName;changed=true}
-      }
-    });
-    s.feePayments.forEach(p=>{
-      let c=s.cases.find(x=>x.id===p.caseId);
-      if(!c&&p.caseNumber)c=s.cases.find(x=>String(x.number)===String(p.caseNumber));
-      if(c){
-        if(p.caseId!==c.id){p.caseId=c.id;changed=true}
-        if(p.caseNumber!==c.number){p.caseNumber=c.number;changed=true}
-        if(p.clientName!==(c.client||'')){p.clientName=c.client||'';changed=true}
-      }
-    });
-    if(changed)localStorage.setItem(KEY,JSON.stringify(s));
-    return s;
-  }
-  function totals(s,f){
-    const received=s.feePayments.filter(p=>p.caseId===f.caseId).reduce((a,p)=>a+Number(p.amount||0),0);
-    const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);
-    return {payable,received,balance:payable-received};
-  }
+  function normalize(){const s=state();let changed=false;s.caseFees.forEach(f=>{let c=s.cases.find(x=>x.id===f.caseId);if(!c&&f.caseNumber)c=s.cases.find(x=>String(x.number)===String(f.caseNumber));if(c){if(f.caseId!==c.id){f.caseId=c.id;changed=true}if(f.caseNumber!==c.number){f.caseNumber=c.number;changed=true}const clientId=c.clientId||'',clientName=c.client||'';if(f.clientId!==clientId){f.clientId=clientId;changed=true}if(f.clientName!==clientName){f.clientName=clientName;changed=true}}});s.feePayments.forEach(p=>{let c=s.cases.find(x=>x.id===p.caseId);if(!c&&p.caseNumber)c=s.cases.find(x=>String(x.number)===String(p.caseNumber));if(c){if(p.caseId!==c.id){p.caseId=c.id;changed=true}if(p.caseNumber!==c.number){p.caseNumber=c.number;changed=true}if(p.clientName!==(c.client||'')){p.clientName=c.client||'';changed=true}}});if(changed)localStorage.setItem(KEY,JSON.stringify(s));return s}
+  function totals(s,f){const received=s.feePayments.filter(p=>String(p.caseId)===String(f.caseId)).reduce((a,p)=>a+Number(p.amount||0),0);const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);return{payable,received,balance:payable-received}}
   function render(){
-    const s=normalize();
-    const q=(document.getElementById('p1feefinalq')?.value||'').trim().toLowerCase();
-    const rows=s.caseFees.map((f,i)=>({f,i,c:s.cases.find(x=>x.id===f.caseId),t:totals(s,f)})).filter(r=>{
-      const text=`${r.c?.number||r.f.caseNumber||''} ${r.c?.client||r.f.clientName||''} ${r.c?.title||''}`.toLowerCase();
-      return !q||text.includes(q);
-    });
-    const agreed=s.caseFees.reduce((a,f)=>a+Number(f.agreedFees||0),0);
-    const additional=s.caseFees.reduce((a,f)=>a+Number(f.additionalCharges||0),0);
-    const received=s.feePayments.reduce((a,p)=>a+Number(p.amount||0),0);
-    const payable=agreed+additional;
-    const balance=payable-received;
-    const tx=s.financeTransactions||[];
-    const expense=tx.filter(x=>x.type==='expense').reduce((a,x)=>a+Number(x.amount||0),0);
+    const s=normalize(),q=(document.getElementById('p1feefinalq')?.value||'').trim().toLowerCase();
+    const rows=s.caseFees.map((f,i)=>({f,i,c:s.cases.find(x=>x.id===f.caseId),t:totals(s,f)})).filter(r=>{const text=`${r.c?.number||r.f.caseNumber||''} ${r.c?.client||r.f.clientName||''} ${r.c?.title||''}`.toLowerCase();return !q||text.includes(q)});
+    const agreed=s.caseFees.reduce((a,f)=>a+Number(f.agreedFees||0),0),additional=s.caseFees.reduce((a,f)=>a+Number(f.additionalCharges||0),0);
+    const caseReceived=s.feePayments.reduce((a,p)=>a+Number(p.amount||0),0),otherIncome=s.financeTransactions.filter(x=>x.type==='income').reduce((a,x)=>a+Number(x.amount||0),0),received=caseReceived+otherIncome;
+    const payable=agreed+additional,balance=payable-caseReceived,expense=s.financeTransactions.filter(x=>x.type==='expense').reduce((a,x)=>a+Number(x.amount||0),0);
     P1.content().innerHTML=P1.layout('Finance','Case-wise fees, payments, additional charges and outstanding balance',`${P1.btn('＋ Add Case Fee','p1FeeSetup()',true)} ${P1.btn('＋ Other Transaction','p1FinanceModal()')}`)+
-      `<div class="cards">
-        <div class="stat"><div class="stat-top">Agreed Fees <span>₹</span></div><div class="stat-value">${money(agreed)}</div><div class="stat-foot">Across all case fees</div></div>
-        <div class="stat"><div class="stat-top">Additional Charges <span>＋</span></div><div class="stat-value">${money(additional)}</div><div class="stat-foot">Added above agreed fees</div></div>
-        <div class="stat"><div class="stat-top">Amount Received <span>✓</span></div><div class="stat-value">${money(received)}</div><div class="stat-foot">Case fee payments</div></div>
-        <div class="stat"><div class="stat-top">Outstanding Fees <span>₹</span></div><div class="stat-value">${money(balance)}</div><div class="stat-foot">Total payable less received</div></div>
-      </div>
-      <div class="panel p1-fee-summary-panel"><div class="panel-head"><div><h3>Case Fee Details</h3><span class="muted">Agreed fees + additional charges − payments received</span></div><div class="p1-fee-inline-stats"><span>Total Payable <strong>${money(payable)}</strong></span><span>Received <strong>${money(received)}</strong></span><span>Balance <strong>${money(balance)}</strong></span></div></div>
-      <div class="toolbar"><input class="filter" id="p1feefinalq" placeholder="Search case number, client or case title..." value="${esc(q)}" oninput="p1FinalFeeRows()"></div>
-      <div class="p1-fee-table-wrap"><table><thead><tr><th>Case Number</th><th>Client</th><th>Agreed Fees</th><th>Additional Charges</th><th>Total Payable</th><th>Received</th><th>Balance</th><th>Action</th></tr></thead><tbody id="p1FinalFeeRows"></tbody></table></div></div>
+      `<div class="cards"><div class="stat"><div class="stat-top">Agreed Fees <span>₹</span></div><div class="stat-value">${money(agreed)}</div><div class="stat-foot">Across all case fees</div></div><div class="stat"><div class="stat-top">Additional Charges <span>＋</span></div><div class="stat-value">${money(additional)}</div><div class="stat-foot">Added above agreed fees</div></div><div class="stat"><div class="stat-top">Amount Received <span>✓</span></div><div class="stat-value">${money(received)}</div><div class="stat-foot">Case payments + other income</div></div><div class="stat"><div class="stat-top">Outstanding Fees <span>₹</span></div><div class="stat-value">${money(balance)}</div><div class="stat-foot">Case payable less case payments</div></div></div>
+      <div class="panel p1-fee-summary-panel"><div class="panel-head"><div><h3>Case Fee Details</h3><span class="muted">Agreed fees + additional charges − case payments received</span></div><div class="p1-fee-inline-stats"><span>Total Payable <strong>${money(payable)}</strong></span><span>Received <strong>${money(caseReceived)}</strong></span><span>Balance <strong>${money(balance)}</strong></span></div></div><div class="toolbar"><input class="filter" id="p1feefinalq" placeholder="Search case number, client or case title..." value="${esc(q)}" oninput="p1FinalFeeRows()"></div><div class="p1-fee-table-wrap"><table><thead><tr><th>Case Number</th><th>Client</th><th>Agreed Fees</th><th>Additional Charges</th><th>Total Payable</th><th>Received</th><th>Balance</th><th>Action</th></tr></thead><tbody id="p1FinalFeeRows"></tbody></table></div></div>
       <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Payment History</h3><span class="muted">All payments linked to individual cases</span></div><div class="p1-fee-table-wrap"><table><thead><tr><th>Date</th><th>Case Number</th><th>Client</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Action</th></tr></thead><tbody id="p1FinalPaymentRows"></tbody></table></div></div>
-      <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Other Finance Transactions</h3><span class="muted">Expenses and non-case-ledger transactions</span></div><div class="p1-fee-table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Client / Case</th><th>Category</th><th>Amount</th><th>Method</th><th>Reference</th><th>Action</th></tr></thead><tbody id="p1FinalOtherRows"></tbody></table><div class="fee-balance-note">Recorded expenses: <strong>${money(expense)}</strong></div></div></div>`;
+      <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Other Finance Transactions</h3><span class="muted">Income and expenses outside the case-fee payment ledger</span></div><div class="p1-fee-table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Client / Case</th><th>Category</th><th>Amount</th><th>Method</th><th>Reference</th><th>Action</th></tr></thead><tbody id="p1FinalOtherRows"></tbody></table><div class="fee-balance-note">Other income: <strong>${money(otherIncome)}</strong> &nbsp; | &nbsp; Recorded expenses: <strong>${money(expense)}</strong></div></div></div>`;
     renderRows();
   }
   function renderRows(){
-    const s=normalize();
-    const q=(document.getElementById('p1feefinalq')?.value||'').trim().toLowerCase();
+    const s=normalize(),q=(document.getElementById('p1feefinalq')?.value||'').trim().toLowerCase();
     const rows=s.caseFees.map((f,i)=>({f,i,c:s.cases.find(x=>x.id===f.caseId),t:totals(s,f)})).filter(r=>{const text=`${r.c?.number||r.f.caseNumber||''} ${r.c?.client||r.f.clientName||''} ${r.c?.title||''}`.toLowerCase();return !q||text.includes(q)});
-    const body=document.getElementById('p1FinalFeeRows');
-    if(body)body.innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.c?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.c?.title||'')}</span></td><td>${esc(r.c?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.t.payable)}</strong></td><td>${money(r.t.received)}</td><td><strong>${money(r.t.balance)}</strong></td><td>${P1.btn('Fee Setup',`p1FeeSetup(${JSON.stringify(r.f.caseId)})`)} ${P1.btn('＋ Payment',`p1FeePayment(${JSON.stringify(r.f.caseId)})`)}</td></tr>`).join('')||'<tr><td colspan="8"><div class="empty">No case fee records found. Use “Add Case Fee” to set fees for a case.</div></td></tr>';
-    const pay=document.getElementById('p1FinalPaymentRows');
-    if(pay){const arr=s.feePayments.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));pay.innerHTML=arr.map(p=>{const c=s.cases.find(x=>x.id===p.caseId),i=s.feePayments.findIndex(x=>x.id===p.id);return `<tr><td>${P1.date(p.date)}</td><td><strong>${esc(c?.number||p.caseNumber||'—')}</strong></td><td>${esc(c?.client||p.clientName||'—')}</td><td><strong>${money(p.amount)}</strong></td><td>${esc(p.method||'')}</td><td>${esc(p.reference||'—')}</td><td>${esc(p.notes||'—')}</td><td>${P1.btn('Edit',`p1FeePayment(${JSON.stringify(p.caseId)},${i})`)} ${P1.btn('Delete',`p1DeleteFeePayment(${i})`)}</td></tr>`}).join('')||'<tr><td colspan="8"><div class="empty">No payments recorded.</div></td></tr>'}
-    const other=document.getElementById('p1FinalOtherRows');
-    if(other){const arr=s.financeTransactions||[];other.innerHTML=arr.map((x,i)=>`<tr><td>${P1.date(x.date)}</td><td>${x.type==='income'?'<span class="badge green">Income</span>':'<span class="badge red">Expense</span>'}</td><td>${esc(x.clientName||'—')}<br><span class="muted">${esc(x.case||'')}</span></td><td>${esc(x.category||'')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.method||'')}</td><td>${esc(x.reference||'—')}</td><td>${P1.btn('Edit',`p1FinanceModal(${i})`)} ${P1.btn('Delete',`p1DeleteFinance(${i})`)}</td></tr>`).join('')||'<tr><td colspan="8"><div class="empty">No other finance transactions.</div></td></tr>'}
+    const body=document.getElementById('p1FinalFeeRows');if(body)body.innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.c?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.c?.title||'')}</span></td><td>${esc(r.c?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.t.payable)}</strong></td><td>${money(r.t.received)}</td><td><strong>${money(r.t.balance)}</strong></td><td>${P1.btn('Fee Setup',`p1FeeSetup(${JSON.stringify(r.f.caseId)})`)} ${P1.btn('＋ Payment',`p1FeePayment(${JSON.stringify(r.f.caseId)})`)}</td></tr>`).join('')||'<tr><td colspan="8"><div class="empty">No case fee records found. Use “Add Case Fee” to set fees for a case.</div></td></tr>';
+    const pay=document.getElementById('p1FinalPaymentRows');if(pay){const arr=s.feePayments.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));pay.innerHTML=arr.map(p=>{const c=s.cases.find(x=>x.id===p.caseId),i=s.feePayments.findIndex(x=>x.id===p.id);return `<tr><td>${P1.date(p.date)}</td><td><strong>${esc(c?.number||p.caseNumber||'—')}</strong></td><td>${esc(c?.client||p.clientName||'—')}</td><td><strong>${money(p.amount)}</strong></td><td>${esc(p.method||'')}</td><td>${esc(p.reference||'—')}</td><td>${esc(p.notes||'—')}</td><td>${P1.btn('Edit',`p1FeePayment(${JSON.stringify(p.caseId)},${i})`)} ${P1.btn('Delete',`p1DeleteFeePayment(${i})`)}</td></tr>`}).join('')||'<tr><td colspan="8"><div class="empty">No payments recorded.</div></td></tr>'}
+    const other=document.getElementById('p1FinalOtherRows');if(other){const arr=s.financeTransactions||[];other.innerHTML=arr.map((x,i)=>`<tr><td>${P1.date(x.date)}</td><td>${x.type==='income'?'<span class="badge green">Income</span>':'<span class="badge red">Expense</span>'}</td><td>${esc(x.clientName||'—')}<br><span class="muted">${esc(x.case||'')}</span></td><td>${esc(x.category||'')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.method||'')}</td><td>${esc(x.reference||'—')}</td><td>${P1.btn('Edit',`p1FinanceModal(${i})`)} ${P1.btn('Delete',`p1DeleteFinance(${i})`)}</td></tr>`).join('')||'<tr><td colspan="8"><div class="empty">No other finance transactions.</div></td></tr>'}
   }
-  window.p1FinalFeeRows=renderRows;
-  window.p1FinalFinance=render;
-  // Make every in-app route to Finance use this renderer, including Dashboard “View Finance”.
-  const oldNavigate=window.navigate;
-  if(typeof oldNavigate==='function'&&!oldNavigate.__p1FeeRouter){
-    const wrapped=function(page){if(page==='finance'){P1.nav('finance');render();return}return oldNavigate.apply(this,arguments)};
-    wrapped.__p1FeeRouter=true;window.navigate=wrapped;
-  }
+  window.p1FinalFeeRows=renderRows;window.p1FinalFinance=render;
+  const oldNavigate=window.navigate;if(typeof oldNavigate==='function'&&!oldNavigate.__p1FeeRouter){const wrapped=function(page){if(page==='finance'){P1.nav('finance');render();return}return oldNavigate.apply(this,arguments)};wrapped.__p1FeeRouter=true;window.navigate=wrapped}
   document.addEventListener('advocateDeskFeeUpdated',()=>{if(document.querySelector('.nav-item.active')?.dataset.page==='finance')render()});
-  document.addEventListener('click',e=>{const n=e.target.closest?.('.nav-item[data-page="finance"]');if(n){setTimeout(()=>{P1.nav('finance');render()},0)}},true);
+  document.addEventListener('click',e=>{const n=e.target.closest?.('.nav-item[data-page="finance"]');if(n){setTimeout(()=>{P1.nav('finance');render()},0)}} ,true);
 })();
