@@ -174,3 +174,51 @@ function saveClient(i){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,0)},{once:true});
   else setTimeout(install,0);
 })();
+
+// Finance: robust Edit handling for Additional Charges History.
+// The generated button contains a quoted inline onclick, so we intercept the
+// action before the browser evaluates that fragile attribute. Matching is
+// case-insensitive and whitespace-tolerant (e.g. "os 555" vs "OS 555").
+(function(){
+  const norm=v=>String(v??'').replace(/\s+/g,' ').trim().toLowerCase();
+
+  function additionalIndexForRow(row){
+    const s=window.P1&&P1.state?P1.state():null;
+    if(!s||!row)return -1;
+    const cells=row.querySelectorAll('td');
+    const number=norm((cells[1]?.innerText||'').split('\n')[0]);
+    const amountText=(cells[5]?.innerText||'').replace(/[^0-9.]/g,'');
+    const amount=Number(amountText||0);
+    const date=(cells[0]?.innerText||'').trim();
+    if(!number)return -1;
+
+    const arr=s.additionalChargeTransactions||[];
+    let match=arr.find(x=>{
+      const c=(s.cases||[]).find(z=>String(z.id)===String(x.caseId));
+      return norm(c?.number||x.caseNumber)===number &&
+             P1.date(x.date)===date &&
+             Number(x.amount)===amount;
+    });
+    if(!match){
+      match=arr.find(x=>norm(x.caseNumber)===number && P1.date(x.date)===date && Number(x.amount)===amount);
+    }
+    return match?arr.findIndex(x=>x.id===match.id):-1;
+  }
+
+  function handleAdditionalEdit(e){
+    const b=e.target.closest&&e.target.closest('#p1additionalrows button');
+    if(!b)return false;
+    if((b.innerText||'').trim()!=='Edit')return false;
+    const row=b.closest('tr');
+    const i=additionalIndexForRow(row);
+    if(i<0)return false;
+    const s=P1.state(),x=s.additionalChargeTransactions[i];
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(typeof window.p1TransactionModal==='function')window.p1TransactionModal('additional',x.caseId,i);
+    return true;
+  }
+
+  document.addEventListener('click',function(e){handleAdditionalEdit(e)},true);
+  document.addEventListener('pointerup',function(e){handleAdditionalEdit(e)},true);
+})();
