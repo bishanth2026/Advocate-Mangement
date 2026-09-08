@@ -8,9 +8,10 @@
   function isSuper(){const a=ADAuth.get();return !!(a&&a.role==='super_admin')}
   function ensureNav(){
     if(!isSuper())return;
-    const nav=document.querySelector('#nav');
     const bottom=document.querySelector('.sidebar-bottom');
     if(!bottom)return;
+    const sidebar=document.querySelector('.sidebar');
+    if(sidebar){sidebar.style.overflowY='auto';sidebar.style.overflowX='hidden';}
     let btn=document.querySelector('.nav-item[data-page="central-control"]');
     if(!btn){
       btn=document.createElement('button');
@@ -48,7 +49,9 @@
     list();
     ensureNav();
     document.addEventListener('click',function(e){const n=e.target.closest&&e.target.closest('.nav-item[data-page="central-control"]');if(n&&isSuper()){e.preventDefault();e.stopImmediatePropagation();render()}},true);
-    if(location.hash==='#central-control')setTimeout(render,50);
+    setTimeout(ensureNav,100);
+    setTimeout(ensureNav,500);
+    if(location.hash==='#central-control')setTimeout(render,100);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
