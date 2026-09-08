@@ -23,7 +23,8 @@
 (function(){
   function load(){
     if(document.querySelector('script[data-super-admin-control]'))return;
-    var s=document.createElement('script');s.src='super-admin-control.js?v=20260908-3';s.async=false;s.setAttribute('data-super-admin-control','1');document.head.appendChild(s);
+    var s=document.createElement('script');s.src='super-admin-control.js?v=20260908-4';s.async=false;s.setAttribute('data-super-admin-control','1');document.head.appendChild(s);
+    var q=document.createElement('script');q.src='super-admin-settings.js?v=20260908-1';q.async=false;q.setAttribute('data-super-admin-settings','1');document.head.appendChild(q);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
 })();
