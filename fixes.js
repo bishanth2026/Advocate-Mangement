@@ -160,6 +160,8 @@ function saveClient(i){
       <div class="panel" style="margin-top:16px"><div class="panel-head"><div><h3>Additional Charges History</h3><span class="muted">Additional charges recorded against individual cases are included in the Additional Charges card and that case's balance.</span></div><div>${P1.btn('＋ Add Additional Charge',"p1TransactionModal('additional')")}</div></div><div class="p1-fee-table-wrap"><table><thead><tr><th>Date</th><th>Case Number</th><th>Client</th><th>Category</th><th>Description</th><th>Amount</th><th>Reference</th><th>Action</th></tr></thead><tbody id="p1additionalrows"></tbody></table></div></div>`;
       if(typeof window.p1FeeRows==='function')window.p1FeeRows();
       if(typeof window.p1AdditionalRows==='function')window.p1AdditionalRows();
+      // Every Finance entry point uses this renderer, so reset the page to the top.
+      window.scrollTo({top:0,left:0,behavior:'auto'});
     };
     const originalNavigate=window.navigate;
     if(typeof originalNavigate==='function'&&!originalNavigate.__financeRouteFixed){
