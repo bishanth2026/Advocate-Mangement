@@ -1,5 +1,57 @@
 (function(){
-function feeSummary(){const s=P1.state(),fees=Array.isArray(s.caseFees)?s.caseFees:[],pays=Array.isArray(s.feePayments)?s.feePayments:[];const agreed=fees.reduce((a,f)=>a+(Number(f.agreedFees)||0),0),additional=fees.reduce((a,f)=>a+(Number(f.additionalCharges)||0),0),received=pays.reduce((a,p)=>a+(Number(p.amount)||0),0);return{agreed,additional,received,balance:agreed+additional-received}}
-function patch(){const c=document.getElementById('content');if(!c)return;const p=c.querySelector('.page-title p');if(p&&/Demo Workspace/.test(p.textContent)){const d=new Date(),target=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+' • Demo Workspace';if(p.textContent!==target)p.textContent=target}const s=P1.state(),today=new Date().toISOString().slice(0,10),n=s.hearings.filter(h=>String(h.date||'')>=today).length,v=c.querySelectorAll('.stat-value');if(v[1]&&v[1].textContent!==String(n))v[1].textContent=String(n);if(c.querySelector('.dashboard-hero')){const t=feeSummary(),html=`<div class="panel p1-dashboard-fees" style="margin-top:16px"><div class="panel-head"><h3>Case Fee Summary</h3><button class="secondary" onclick="navigate('finance')">Open Finance</button></div><div class="cards" style="margin:0;padding:0"><div class="stat"><div class="stat-top">Agreed Fees</div><div class="stat-value">${P1.money(t.agreed)}</div></div><div class="stat"><div class="stat-top">Additional Charges</div><div class="stat-value">${P1.money(t.additional)}</div></div><div class="stat"><div class="stat-top">Amount Received</div><div class="stat-value">${P1.money(t.received)}</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">${P1.money(t.balance)}</div></div></div></div>`;const old=c.querySelector('.p1-dashboard-fees');if(!old){c.querySelector('.quick-grid')?.closest('.panel')?.insertAdjacentHTML('beforebegin',html)}else if(old.outerHTML!==html)old.outerHTML=html}}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(patch,100),{once:true});else setTimeout(patch,100);new MutationObserver(()=>patch()).observe(document.getElementById('content')||document.body,{childList:true,subtree:true});window.addEventListener('advocateDeskFeeUpdated',patch);
+function feeSummary(s){
+  const fees=Array.isArray(s.caseFees)?s.caseFees:[];
+  const pays=Array.isArray(s.feePayments)?s.feePayments:[];
+  const agreed=fees.reduce((a,f)=>a+Number(f.agreedFees||0),0);
+  const additional=fees.reduce((a,f)=>a+Number(f.additionalCharges||0),0);
+  const received=pays.reduce((a,p)=>a+Number(p.amount||0),0);
+  const payable=agreed+additional;
+  return {agreed,additional,received,payable,balance:payable-received};
+}
+function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function patch(){
+  const c=document.getElementById('content');if(!c)return;
+  const s=P1.state();
+  const today=new Date().toISOString().slice(0,10);
+  const n=s.hearings.filter(h=>String(h.date||'')>=today).length;
+  const fs=feeSummary(s);
+  const p=c.querySelector('.page-title p');
+  if(p&&/Demo Workspace/.test(p.textContent)){
+    const d=new Date(),target=d.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+' • Demo Workspace';
+    if(p.textContent!==target)p.textContent=target;
+  }
+  const v=c.querySelectorAll('.stat-value');
+  if(v[1]&&v[1].textContent!==String(n))v[1].textContent=String(n);
+  if(!c.querySelector('#p1DashboardFeeCards')){
+    const cards=c.querySelector('.cards');
+    if(cards){
+      const wrap=document.createElement('div');wrap.id='p1DashboardFeeCards';wrap.className='cards';
+      wrap.innerHTML=`<div class="stat"><div class="stat-top">Agreed Fees <span>₹</span></div><div class="stat-value">${money(fs.agreed)}</div><div class="stat-foot">Across all case fees</div></div><div class="stat"><div class="stat-top">Additional Charges <span>＋</span></div><div class="stat-value">${money(fs.additional)}</div><div class="stat-foot">Added above agreed fees</div></div><div class="stat"><div class="stat-top">Amount Received <span>✓</span></div><div class="stat-value">${money(fs.received)}</div><div class="stat-foot">Case fee payments</div></div><div class="stat"><div class="stat-top">Outstanding Fees <span>₹</span></div><div class="stat-value">${money(fs.balance)}</div><div class="stat-foot">Total payable less received</div></div>`;
+      cards.insertAdjacentElement('afterend',wrap);
+    }
+  }else{
+    const fc=c.querySelector('#p1DashboardFeeCards');
+    if(fc){const vals=fc.querySelectorAll('.stat-value');[fs.agreed,fs.additional,fs.received,fs.balance].forEach((x,i)=>{if(vals[i]){const m=money(x);if(vals[i].textContent!==m)vals[i].textContent=m}})}
+  }
+  if(!c.querySelector('#p1DashboardFeeDetails')){
+    const rows=(Array.isArray(s.caseFees)?s.caseFees:[]).map(f=>{
+      const cs=s.cases.find(x=>x.id===f.caseId);const received=(Array.isArray(s.feePayments)?s.feePayments:[]).filter(p=>p.caseId===f.caseId).reduce((a,p)=>a+Number(p.amount||0),0);const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);return {f,cs,received,payable,balance:payable-received};
+    }).filter(r=>r.f&&(Number(r.f.agreedFees||0)||Number(r.f.additionalCharges||0)||r.received));
+    if(rows.length){
+      const anchor=c.querySelector('.grid-2');
+      if(anchor){const panel=document.createElement('div');panel.id='p1DashboardFeeDetails';panel.className='panel';panel.style.marginTop='16px';panel.innerHTML=`<div class="panel-head"><h3>Case Fee Details</h3><button class="secondary" onclick="navigate('finance')">View Finance</button></div><div class="panel-body" style="padding:0"><table><thead><tr><th>Case Number</th><th>Client</th><th>Agreed Fees</th><th>Additional Charges</th><th>Total Payable</th><th>Received</th><th>Balance</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.cs?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.cs?.title||'')}</span></td><td>${esc(r.cs?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.payable)}</strong></td><td>${money(r.received)}</td><td><strong>${money(r.balance)}</strong></td></tr>`).join('')}</tbody></table></div>`;anchor.insertAdjacentElement('afterend',panel)}
+    }
+  }else{
+    const panel=c.querySelector('#p1DashboardFeeDetails');
+    if(panel){const rows=(Array.isArray(s.caseFees)?s.caseFees:[]).map(f=>{const cs=s.cases.find(x=>x.id===f.caseId);const received=(Array.isArray(s.feePayments)?s.feePayments:[]).filter(p=>p.caseId===f.caseId).reduce((a,p)=>a+Number(p.amount||0),0);const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);return {f,cs,received,payable,balance:payable-received}}).filter(r=>Number(r.f.agreedFees||0)||Number(r.f.additionalCharges||0)||r.received);const body=panel.querySelector('tbody');if(body)body.innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.cs?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.cs?.title||'')}</span></td><td>${esc(r.cs?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.payable)}</strong></td><td>${money(r.received)}</td><td><strong>${money(r.balance)}</strong></td></tr>`).join('')||'<tr><td colspan="7"><div class="empty">No case fees recorded yet.</div></td></tr>'}
+  }
+}
+function start(){
+  const run=()=>setTimeout(patch,100);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
+  document.addEventListener('advocateDeskFeeUpdated',run);
+  new MutationObserver(()=>{if(document.getElementById('content'))patch()}).observe(document.getElementById('content')||document.body,{childList:true,subtree:true});
+}
+start();
 })();
