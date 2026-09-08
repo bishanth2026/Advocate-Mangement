@@ -4,6 +4,17 @@
   let observer=null;
   let patching=false;
 
+  function isSuperAdmin(){
+    try{return !!(window.ADAuth&&ADAuth.get&&ADAuth.get()?.role==='super_admin')}catch(e){return false}
+  }
+
+  function removeCustomerDashboardPanels(){
+    const c=document.getElementById('content');
+    if(!c)return;
+    c.querySelector('#p1DashboardFeeCards')?.remove();
+    c.querySelector('#p1DashboardFeeDetails')?.remove();
+  }
+
   function feeSummary(s){
     const fees=Array.isArray(s.caseFees)?s.caseFees:[];
     const pays=Array.isArray(s.feePayments)?s.feePayments:[];
@@ -13,16 +24,19 @@
     const payable=agreed+additional;
     return {agreed,additional,received,payable,balance:payable-received};
   }
-  function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2)}
+  }
   function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
   function schedule(){
+    if(isSuperAdmin()){removeCustomerDashboardPanels();return}
     if(scheduled)return;
     scheduled=true;
     setTimeout(function(){scheduled=false;patch()},60);
   }
 
   function patch(){
+    if(isSuperAdmin()){removeCustomerDashboardPanels();return}
     if(patching)return;
     const c=document.getElementById('content');
     if(!c)return;
@@ -84,7 +98,6 @@
         }
         if(panel){
           const html=`<div class="panel-head"><h3>Case Fee Details</h3><button class="secondary" onclick="navigate('finance')">View Finance</button></div><div class="panel-body" style="padding:0"><table><thead><tr><th>Case Number</th><th>Client</th><th>Agreed Fees</th><th>Additional Charges</th><th>Total Payable</th><th>Received</th><th>Balance</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.cs?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.cs?.title||'')}</span></td><td>${esc(r.cs?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.payable)}</strong></td><td>${money(r.received)}</td><td><strong>${money(r.balance)}</strong></td></tr>`).join('')}</tbody></table></div>`;
-          // Do not rewrite identical HTML; this is the key protection against the observer loop.
           if(panel.innerHTML!==html)panel.innerHTML=html;
         }
       }else if(panel){
@@ -96,6 +109,7 @@
   }
 
   function start(){
+    if(isSuperAdmin()){removeCustomerDashboardPanels();return}
     schedule();
     document.addEventListener('advocateDeskFeeUpdated',schedule);
     document.addEventListener('click',function(e){
@@ -103,7 +117,10 @@
     },true);
     const root=document.getElementById('content')||document.body;
     observer=new MutationObserver(function(){
-      if(patching)return;
+      if(patching||isSuperAdmin()){
+        if(isSuperAdmin())removeCustomerDashboardPanels();
+        return;
+      }
       const active=document.querySelector('.nav-item.active')?.dataset.page;
       if(active==='dashboard')schedule();
     });
