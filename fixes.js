@@ -62,8 +62,9 @@ function saveClient(i){
     if(!confirm('Delete the fee setup for '+(c?.number||fee.caseNumber||'this case')+'?\n\nThe case will remain. Payment and additional-charge history will be kept.'))return;
     s.caseFees=s.caseFees.filter(function(x){return String(x.caseId)!==String(caseId)});
     P1.save(s);
-    if(typeof window.finance==='function')window.finance();
-    else if(typeof window.p1FeeRows==='function')window.p1FeeRows();
+    const nav=document.querySelector('[data-page="finance"]');
+    if(nav){nav.click();return}
+    if(typeof window.p1FeeRows==='function')window.p1FeeRows();
   }
   document.addEventListener('click',function(e){
     const b=e.target.closest&&e.target.closest('[data-delete-case-fee]');
