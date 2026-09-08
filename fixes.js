@@ -164,7 +164,11 @@ function saveClient(i){
     const originalNavigate=window.navigate;
     if(typeof originalNavigate==='function'&&!originalNavigate.__financeRouteFixed){
       const routed=function(page){
-        if(String(page)==='finance'){window.p1Finance();return;}
+        if(String(page)==='finance'){
+          window.p1Finance();
+          requestAnimationFrame(function(){window.scrollTo({top:0,left:0,behavior:'auto'});});
+          return;
+        }
         return originalNavigate.apply(this,arguments);
       };
       routed.__financeRouteFixed=true;
@@ -221,4 +225,24 @@ function saveClient(i){
 
   document.addEventListener('click',function(e){handleAdditionalEdit(e)},true);
   document.addEventListener('pointerup',function(e){handleAdditionalEdit(e)},true);
+})();
+
+// Finance navigation: always start at the top after any Finance route is rendered.
+// This only changes scroll position; it does not change Finance markup, styling or actions.
+(function(){
+  function install(){
+    if(!window.P1)return;
+    function topOnFinance(){
+      if(document.querySelector('.nav-item.active')?.dataset.page!=='finance')return;
+      window.scrollTo(0,0);
+      const main=document.querySelector('.main');
+      if(main && main.scrollHeight>main.clientHeight)main.scrollTo(0,0);
+    }
+    document.addEventListener('click',function(e){
+      const b=e.target.closest&&e.target.closest('.nav-item[data-page="finance"]');
+      if(b)setTimeout(topOnFinance,0);
+    },true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,0)},{once:true});
+  else setTimeout(install,0);
 })();
