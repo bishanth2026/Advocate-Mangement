@@ -21,28 +21,45 @@ function saveClient(i){
   navigate("clients");
 }
 
-// Finance: add a Delete action to each Case Fee Details row.
+// Finance: reliable Case Fee Details actions, including rows whose case-number
+// capitalization or spacing differs from the stored case record.
 (function(){
+  const norm=v=>String(v??'').replace(/\s+/g,' ').trim().toLowerCase();
+
+  function feeForRow(s,row){
+    const cells=row?.querySelectorAll('td');
+    if(!cells?.length)return null;
+    const number=((cells[0]?.innerText||'').split('\n')[0]||'').trim();
+    if(!number)return null;
+    let fee=(s.caseFees||[]).find(f=>norm(f.caseNumber)===norm(number));
+    if(fee)return fee;
+    const c=(s.cases||[]).find(x=>norm(x.number)===norm(number));
+    if(c)fee=(s.caseFees||[]).find(f=>String(f.caseId)===String(c.id));
+    return fee||null;
+  }
+
+  function caseForFee(s,fee){
+    if(!fee)return null;
+    return (s.cases||[]).find(c=>String(c.id)===String(fee.caseId)) ||
+           (s.cases||[]).find(c=>norm(c.number)===norm(fee.caseNumber)) || null;
+  }
+
   function addCaseFeeDeleteButtons(){
     const tbody=document.getElementById('p1feerows');
     if(!tbody)return;
     tbody.querySelectorAll('tr').forEach(function(row){
       if(row.querySelector('[data-delete-case-fee]'))return;
-      const cells=row.querySelectorAll('td');
-      if(!cells.length)return;
-      const caseNumber=((cells[0]?.innerText||'').split('\n')[0]||'').trim();
-      if(!caseNumber)return;
       const s=window.P1&&P1.state?P1.state():null;
       if(!s)return;
-      const c=(s.cases||[]).find(function(x){return String(x.number)===caseNumber});
-      if(!c)return;
-      const action=cells[cells.length-1];
+      const fee=feeForRow(s,row);
+      if(!fee)return;
+      const action=row.querySelector('td:last-child');
       if(!action)return;
       const b=document.createElement('button');
       b.type='button';
       b.className='secondary';
       b.setAttribute('data-delete-case-fee','1');
-      b.setAttribute('data-case-id',String(c.id));
+      b.setAttribute('data-case-id',String(fee.caseId));
       b.textContent='Delete';
       b.style.marginLeft='6px';
       b.style.color='#b42318';
@@ -51,34 +68,56 @@ function saveClient(i){
       action.appendChild(b);
     });
   }
+
   function deleteCaseFee(button){
     const caseId=button.getAttribute('data-case-id');
     if(!caseId)return;
     const s=window.P1&&P1.state?P1.state():null;
     if(!s)return;
-    const c=(s.cases||[]).find(function(x){return String(x.id)===String(caseId)});
-    const fee=(s.caseFees||[]).find(function(x){return String(x.caseId)===String(caseId)});
+    const fee=(s.caseFees||[]).find(x=>String(x.caseId)===String(caseId));
     if(!fee)return;
+    const c=caseForFee(s,fee);
     if(!confirm('Delete the fee setup for '+(c?.number||fee.caseNumber||'this case')+'?\n\nThe case will remain. Payment and additional-charge history will be kept.'))return;
-    s.caseFees=s.caseFees.filter(function(x){return String(x.caseId)!==String(caseId)});
+    s.caseFees=s.caseFees.filter(x=>String(x.caseId)!==String(caseId));
     P1.save(s);
-    const nav=document.querySelector('[data-page="finance"]');
-    if(nav){nav.click();return}
-    if(typeof window.p1FeeRows==='function')window.p1FeeRows();
+    if(typeof window.finance==='function')window.finance();
+    else if(typeof window.p1FeeRows==='function')window.p1FeeRows();
   }
+
+  function handleFeeRowAction(e){
+    const b=e.target.closest&&e.target.closest('#p1feerows button');
+    if(!b)return;
+    const row=b.closest('tr');
+    if(!row)return;
+    const text=(b.innerText||'').trim();
+    const s=window.P1&&P1.state?P1.state():null;
+    if(!s)return;
+    const fee=feeForRow(s,row);
+    if(!fee)return;
+    if(text==='Fee Setup'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(typeof window.p1FeeSetup==='function')window.p1FeeSetup(fee.caseId);
+    }else if(text==='＋ Payment'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(typeof window.p1TransactionModal==='function')window.p1TransactionModal('payment',fee.caseId);
+    }
+  }
+
   document.addEventListener('click',function(e){
-    const b=e.target.closest&&e.target.closest('[data-delete-case-fee]');
-    if(!b)return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    deleteCaseFee(b);
+    const del=e.target.closest&&e.target.closest('[data-delete-case-fee]');
+    if(del){e.preventDefault();e.stopImmediatePropagation();deleteCaseFee(del);return;}
+    handleFeeRowAction(e);
   },true);
+
   document.addEventListener('pointerup',function(e){
-    const b=e.target.closest&&e.target.closest('[data-delete-case-fee]');
-    if(!b)return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
+    const del=e.target.closest&&e.target.closest('[data-delete-case-fee]');
+    if(del){e.preventDefault();e.stopImmediatePropagation();return;}
+    const b=e.target.closest&&e.target.closest('#p1feerows button');
+    if(b){e.preventDefault();e.stopImmediatePropagation();handleFeeRowAction(e);}
   },true);
+
   const observer=new MutationObserver(addCaseFeeDeleteButtons);
   function start(){
     const content=document.getElementById('content');
