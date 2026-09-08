@@ -12,6 +12,9 @@ function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{minimumFract
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function patch(){
   const c=document.getElementById('content');if(!c)return;
+  const active=document.querySelector('.nav-item.active')?.dataset.page;
+  // Dashboard fee widgets must never be injected into the Finance page.
+  if(active && active!=='dashboard')return;
   const s=P1.state();
   const today=new Date().toISOString().slice(0,10);
   const n=s.hearings.filter(h=>String(h.date||'')>=today).length;
@@ -34,18 +37,20 @@ function patch(){
     const fc=c.querySelector('#p1DashboardFeeCards');
     if(fc){const vals=fc.querySelectorAll('.stat-value');[fs.agreed,fs.additional,fs.received,fs.balance].forEach((x,i)=>{if(vals[i]){const m=money(x);if(vals[i].textContent!==m)vals[i].textContent=m}})}
   }
-  if(!c.querySelector('#p1DashboardFeeDetails')){
-    const rows=(Array.isArray(s.caseFees)?s.caseFees:[]).map(f=>{
-      const cs=s.cases.find(x=>x.id===f.caseId);const received=(Array.isArray(s.feePayments)?s.feePayments:[]).filter(p=>p.caseId===f.caseId).reduce((a,p)=>a+Number(p.amount||0),0);const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);return {f,cs,received,payable,balance:payable-received};
-    }).filter(r=>r.f&&(Number(r.f.agreedFees||0)||Number(r.f.additionalCharges||0)||r.received));
-    if(rows.length){
+  const rows=(Array.isArray(s.caseFees)?s.caseFees:[]).map(f=>{
+    const cs=s.cases.find(x=>x.id===f.caseId);
+    const received=(Array.isArray(s.feePayments)?s.feePayments:[]).filter(p=>p.caseId===f.caseId).reduce((a,p)=>a+Number(p.amount||0),0);
+    const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);
+    return {f,cs,received,payable,balance:payable-received};
+  }).filter(r=>r.f&&(Number(r.f.agreedFees||0)||Number(r.f.additionalCharges||0)||r.received));
+  let panel=c.querySelector('#p1DashboardFeeDetails');
+  if(rows.length){
+    if(!panel){
       const anchor=c.querySelector('.grid-2');
-      if(anchor){const panel=document.createElement('div');panel.id='p1DashboardFeeDetails';panel.className='panel';panel.style.marginTop='16px';panel.innerHTML=`<div class="panel-head"><h3>Case Fee Details</h3><button class="secondary" onclick="navigate('finance')">View Finance</button></div><div class="panel-body" style="padding:0"><table><thead><tr><th>Case Number</th><th>Client</th><th>Agreed Fees</th><th>Additional Charges</th><th>Total Payable</th><th>Received</th><th>Balance</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.cs?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.cs?.title||'')}</span></td><td>${esc(r.cs?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.payable)}</strong></td><td>${money(r.received)}</td><td><strong>${money(r.balance)}</strong></td></tr>`).join('')}</tbody></table></div>`;anchor.insertAdjacentElement('afterend',panel)}
+      if(anchor){panel=document.createElement('div');panel.id='p1DashboardFeeDetails';panel.className='panel';panel.style.marginTop='16px';anchor.insertAdjacentElement('afterend',panel)}
     }
-  }else{
-    const panel=c.querySelector('#p1DashboardFeeDetails');
-    if(panel){const rows=(Array.isArray(s.caseFees)?s.caseFees:[]).map(f=>{const cs=s.cases.find(x=>x.id===f.caseId);const received=(Array.isArray(s.feePayments)?s.feePayments:[]).filter(p=>p.caseId===f.caseId).reduce((a,p)=>a+Number(p.amount||0),0);const payable=Number(f.agreedFees||0)+Number(f.additionalCharges||0);return {f,cs,received,payable,balance:payable-received}}).filter(r=>Number(r.f.agreedFees||0)||Number(r.f.additionalCharges||0)||r.received);const body=panel.querySelector('tbody');if(body)body.innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.cs?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.cs?.title||'')}</span></td><td>${esc(r.cs?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.payable)}</strong></td><td>${money(r.received)}</td><td><strong>${money(r.balance)}</strong></td></tr>`).join('')||'<tr><td colspan="7"><div class="empty">No case fees recorded yet.</div></td></tr>'}
-  }
+    if(panel){panel.innerHTML=`<div class="panel-head"><h3>Case Fee Details</h3><button class="secondary" onclick="navigate('finance')">View Finance</button></div><div class="panel-body" style="padding:0"><table><thead><tr><th>Case Number</th><th>Client</th><th>Agreed Fees</th><th>Additional Charges</th><th>Total Payable</th><th>Received</th><th>Balance</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.cs?.number||r.f.caseNumber||'—')}</strong><br><span class="muted">${esc(r.cs?.title||'')}</span></td><td>${esc(r.cs?.client||r.f.clientName||'—')}</td><td>${money(r.f.agreedFees)}</td><td>${money(r.f.additionalCharges)}</td><td><strong>${money(r.payable)}</strong></td><td>${money(r.received)}</td><td><strong>${money(r.balance)}</strong></td></tr>`).join('')}</tbody></table></div>`}
+  }else if(panel){panel.remove()}
 }
 function start(){
   const run=()=>setTimeout(patch,100);
