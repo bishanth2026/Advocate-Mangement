@@ -1,0 +1,28 @@
+/* New Case / case modal layout */
+.modal{padding:24px!important;overflow-y:auto!important;align-items:center!important}
+.modal-card{width:min(820px,calc(100vw - 48px))!important;max-height:calc(100vh - 48px)!important;display:flex!important;flex-direction:column!important;padding:0!important;overflow:hidden!important}
+.modal-head{padding:22px 26px 16px!important;margin:0!important;border-bottom:1px solid var(--line)!important;flex:0 0 auto!important}
+.modal-head h2,.modal-head h3{margin:0!important;font-size:22px!important;color:var(--ink)!important}
+.modal-head p{margin:5px 0 0!important;color:var(--muted)!important;font-size:12px!important}
+.modal-body{padding:22px 26px 4px!important;overflow-y:auto!important;flex:1 1 auto!important}
+.modal-body .form-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px 22px!important;width:100%!important}
+.modal-body .form-grid>label{display:flex!important;flex-direction:column!important;gap:7px!important;min-width:0!important;font-size:12px!important;font-weight:650!important;color:#344054!important}
+.modal-body .form-grid>label>input,
+.modal-body .form-grid>label>select,
+.modal-body .form-grid>label>textarea{width:100%!important;min-width:0!important;max-width:100%!important;border:1px solid #d7dee9!important;border-radius:8px!important;padding:10px 11px!important;background:#fff!important;color:var(--ink)!important;font-size:13px!important;outline:none!important}
+.modal-body .form-grid>label>input:focus,
+.modal-body .form-grid>label>select:focus,
+.modal-body .form-grid>label>textarea:focus{border-color:#6b8fd6!important;box-shadow:0 0 0 3px rgba(53,106,230,.10)!important}
+.modal-body .form-grid>label>select[multiple]{min-height:124px!important;padding:5px!important}
+.modal-body .form-grid>label>small{font-weight:400!important;font-size:11px!important;color:var(--muted)!important;line-height:1.45!important}
+.modal-body .form-grid>label:nth-child(3){min-width:0!important}
+.form-actions{padding:16px 26px 22px!important;margin:0!important;border-top:1px solid var(--line)!important;flex:0 0 auto!important;background:#fff!important}
+@media(max-width:720px){
+ .modal{padding:12px!important;align-items:center!important}
+ .modal-card{width:100%!important;max-height:calc(100vh - 24px)!important}
+ .modal-head{padding:18px 18px 14px!important}
+ .modal-head h2,.modal-head h3{font-size:19px!important}
+ .modal-body{padding:18px 18px 4px!important}
+ .modal-body .form-grid{grid-template-columns:1fr!important;gap:15px!important}
+ .form-actions{padding:13px 18px 17px!important}
+}
