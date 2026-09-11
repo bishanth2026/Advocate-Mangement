@@ -13,7 +13,7 @@
     if(caseNumberField){
       caseNumberField.type='text';
       caseNumberField.dataset.caseNumberEnhanced='';
-      caseNumberField.dataset.civilPrefixEnhanced='';
+      caseNumberField.dataset.caseNumberType='';
     }
   }
 
@@ -21,20 +21,24 @@
     const label=caseNumberField.closest('label');
     if(!label)return;
 
-    clearEnhanced(label,caseNumberField);
-
     const type=(typeField.value||'').trim();
+    if(caseNumberField.dataset.caseNumberEnhanced==='1' && caseNumberField.dataset.caseNumberType===type && label.querySelector('.case-number-type-wrap'))return;
+
+    clearEnhanced(label,caseNumberField);
     if(type!=='Civil' && type!=='Criminal')return;
 
     const original=(caseNumberField.value||'').trim();
     const options=type==='Criminal'?[['CC','CC'],['CP','CP'],['ST','ST'],['MC','MC']]:[['OS','OS'],['OP','OP']];
     const regex=type==='Criminal'?/^(CC|CP|ST|MC)\s+(.*)$/i:/^(OS|OP)\s+(.*)$/i;
+    const anyKnownPrefix=/^(?:OS|OP|CC|CP|ST|MC)\s+(.*)$/i;
     const match=original.match(regex);
+    const anyMatch=original.match(anyKnownPrefix);
     const prefix=match?match[1].toUpperCase():options[0][0];
-    const number=match?match[2]:original;
+    const number=match?match[2]:(anyMatch?anyMatch[1]:original);
 
     caseNumberField.type='hidden';
     caseNumberField.dataset.caseNumberEnhanced='1';
+    caseNumberField.dataset.caseNumberType=type;
 
     const wrap=document.createElement('div');
     wrap.className='case-number-type-wrap';
