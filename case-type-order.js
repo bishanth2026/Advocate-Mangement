@@ -1,77 +1,93 @@
 (function(){
-  function syncCaseNumber(prefixInput,numberInput,hidden){
-    const prefix=prefixInput.value||'';
-    const number=(numberInput.value||'').trim();
-    hidden.value=prefix&&number?prefix+' '+number:(prefix||number);
+  const STYLE='width:100%;height:42px;box-sizing:border-box;border:1px solid #d7dee9;border-radius:8px;padding:10px 11px;background:#fff;color:var(--ink);font-size:13px;line-height:20px;outline:none;';
+  const OPTIONS={Civil:['OS','OP'],Criminal:['CC','CP','ST','MC']};
+
+  function sync(prefix,number,hidden){
+    hidden.value=prefix.value+(number.value.trim()?' '+number.value.trim():'');
     hidden.dispatchEvent(new Event('input',{bubbles:true}));
     hidden.dispatchEvent(new Event('change',{bubbles:true}));
   }
 
-  function clearEnhanced(label,caseNumberField){
-    const old=label&&label.querySelector('.case-number-type-wrap');
-    if(old)old.remove();
-    if(caseNumberField){
-      caseNumberField.type='text';
-      caseNumberField.dataset.caseNumberEnhanced='';
-      caseNumberField.dataset.caseNumberType='';
-    }
-  }
-
-  function enhanceCaseNumber(typeField,caseNumberField){
+  function build(typeField,caseNumberField){
     const label=caseNumberField.closest('label');
     if(!label)return;
-
     const type=(typeField.value||'').trim();
-    if(caseNumberField.dataset.caseNumberEnhanced==='1' && caseNumberField.dataset.caseNumberType===type && label.querySelector('.case-number-type-wrap'))return;
+    const choices=OPTIONS[type];
+    const oldWrap=label.querySelector('.case-number-type-wrap');
 
-    clearEnhanced(label,caseNumberField);
-    if(type!=='Civil' && type!=='Criminal')return;
+    if(!choices){
+      if(oldWrap){
+        const prefix=oldWrap.querySelector('#caseNumberPrefix')?.value||'';
+        const number=oldWrap.querySelector('#caseNumberValue')?.value.trim()||'';
+        caseNumberField.type='text';
+        caseNumberField.style.cssText=STYLE;
+        caseNumberField.value=prefix+(number?' '+number:'');
+        oldWrap.remove();
+      }else{
+        caseNumberField.type='text';
+        caseNumberField.style.cssText=STYLE;
+      }
+      return;
+    }
 
-    const original=(caseNumberField.value||'').trim();
-    const options=type==='Criminal'?[['CC','CC'],['CP','CP'],['ST','ST'],['MC','MC']]:[['OS','OS'],['OP','OP']];
-    const regex=type==='Criminal'?/^(CC|CP|ST|MC)\s+(.*)$/i:/^(OS|OP)\s+(.*)$/i;
-    const anyKnownPrefix=/^(?:OS|OP|CC|CP|ST|MC)\s+(.*)$/i;
-    const match=original.match(regex);
-    const anyMatch=original.match(anyKnownPrefix);
-    const prefix=match?match[1].toUpperCase():options[0][0];
-    const number=match?match[2]:(anyMatch?anyMatch[1]:original);
+    let number='';
+    let prefix=choices[0];
+    if(oldWrap){
+      prefix=oldWrap.querySelector('#caseNumberPrefix')?.value||prefix;
+      number=oldWrap.querySelector('#caseNumberValue')?.value.trim()||'';
+    }else{
+      const current=String(caseNumberField.value||'').trim();
+      const m=current.match(/^(OS|OP|CC|CP|ST|MC)(?:\s+(.*))?$/i);
+      if(m){
+        const oldPrefix=m[1].toUpperCase();
+        if(choices.includes(oldPrefix))prefix=oldPrefix;
+        number=(m[2]||'').trim();
+      }else number=current;
+    }
 
-    caseNumberField.type='hidden';
-    caseNumberField.dataset.caseNumberEnhanced='1';
-    caseNumberField.dataset.caseNumberType=type;
+    if(!oldWrap){
+      caseNumberField.type='hidden';
+      caseNumberField.style.cssText='';
+      const wrap=document.createElement('div');
+      wrap.className='case-number-type-wrap';
+      wrap.style.cssText='display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;width:100%;';
 
-    const wrap=document.createElement('div');
-    wrap.className='case-number-type-wrap';
-    wrap.style.cssText='display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;width:100%;';
+      const prefixSelect=document.createElement('select');
+      prefixSelect.id='caseNumberPrefix';
+      prefixSelect.style.cssText=STYLE;
+      const numberInput=document.createElement('input');
+      numberInput.id='caseNumberValue';
+      numberInput.type='text';
+      numberInput.placeholder='Enter case number / year';
+      numberInput.style.cssText=STYLE;
 
-    const prefixSelect=document.createElement('select');
-    prefixSelect.id='caseNumberPrefix';
-    prefixSelect.style.cssText='width:100%;height:42px;box-sizing:border-box;border:1px solid #d7dee9;border-radius:8px;padding:10px 11px;background:#fff;color:var(--ink);font-size:13px;line-height:20px;outline:none;';
-    options.forEach(function(x){
-      const o=document.createElement('option');
-      o.value=x[0];
-      o.textContent=x[1];
-      if(x[0]===prefix)o.selected=true;
-      prefixSelect.appendChild(o);
+      wrap.append(prefixSelect,numberInput);
+      label.appendChild(wrap);
+
+      prefixSelect.addEventListener('change',function(){sync(prefixSelect,numberInput,caseNumberField)});
+      numberInput.addEventListener('input',function(){sync(prefixSelect,numberInput,caseNumberField)});
+      [prefixSelect,numberInput].forEach(function(el){
+        el.addEventListener('focus',function(){el.style.borderColor='#6b8fd6';el.style.boxShadow='0 0 0 3px rgba(53,106,230,.10)'});
+        el.addEventListener('blur',function(){el.style.borderColor='#d7dee9';el.style.boxShadow='none'});
+      });
+    }
+
+    const prefixSelect=label.querySelector('#caseNumberPrefix');
+    const numberInput=label.querySelector('#caseNumberValue');
+    if(!prefixSelect||!numberInput)return;
+
+    prefixSelect.innerHTML='';
+    choices.forEach(function(value){
+      const option=document.createElement('option');
+      option.value=value;
+      option.textContent=value;
+      if(value===prefix)option.selected=true;
+      prefixSelect.appendChild(option);
     });
-
-    const numberInput=document.createElement('input');
-    numberInput.id='caseNumberValue';
-    numberInput.type='text';
+    if(!choices.includes(prefix))prefix=choices[0];
+    prefixSelect.value=prefix;
     numberInput.value=number;
-    numberInput.placeholder='Enter case number / year';
-    numberInput.style.cssText='width:100%;height:42px;box-sizing:border-box;border:1px solid #d7dee9;border-radius:8px;padding:10px 11px;background:#fff;color:var(--ink);font-size:13px;line-height:20px;outline:none;';
-
-    prefixSelect.addEventListener('change',function(){syncCaseNumber(prefixSelect,numberInput,caseNumberField)});
-    numberInput.addEventListener('input',function(){syncCaseNumber(prefixSelect,numberInput,caseNumberField)});
-    [prefixSelect,numberInput].forEach(function(i){
-      i.addEventListener('focus',function(){i.style.borderColor='#6b8fd6';i.style.boxShadow='0 0 0 3px rgba(53,106,230,.10)'});
-      i.addEventListener('blur',function(){i.style.borderColor='#d7dee9';i.style.boxShadow='none'});
-    });
-
-    wrap.append(prefixSelect,numberInput);
-    label.appendChild(wrap);
-    syncCaseNumber(prefixSelect,numberInput,caseNumberField);
+    sync(prefixSelect,numberInput,caseNumberField);
   }
 
   function moveTypeAboveCaseNumber(){
@@ -86,11 +102,12 @@
     const caseNumberLabel=caseNumberField.closest('label');
     if(!typeLabel||!caseNumberLabel||typeLabel.parentElement!==grid||caseNumberLabel.parentElement!==grid)return;
     if(typeLabel!==grid.firstElementChild)grid.insertBefore(typeLabel,caseNumberLabel);
-    enhanceCaseNumber(typeField,caseNumberField);
+
     if(typeField.dataset.caseTypeListener!=='1'){
       typeField.dataset.caseTypeListener='1';
-      typeField.addEventListener('change',function(){enhanceCaseNumber(typeField,caseNumberField)});
+      typeField.addEventListener('change',function(){build(typeField,caseNumberField)});
     }
+    build(typeField,caseNumberField);
   }
 
   function boot(){
