@@ -1,16 +1,49 @@
 (function(){
-  function data(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'null')||{}}catch(e){return {}}}
-  function esc(v){return String(v==null?'':v)}
   function normalize(phone){var d=String(phone||'').replace(/\D/g,'');if(d.indexOf('00')===0)d=d.slice(2);if(d.length===10&&/^[6-9]/.test(d))d='91'+d;return d}
-  function getClient(s,id){return (s.clients||[]).find(function(c){return String(c.id)===String(id)})||null}
-  function selectedClientIds(modal){var sel=modal.querySelector('select[multiple]')||modal.querySelector('select');if(!sel)return[];return Array.prototype.slice.call(sel.selectedOptions||[]).map(function(o){return o.value}).filter(Boolean)}
-  function field(modal,labels){var all=Array.prototype.slice.call(modal.querySelectorAll('input,select,textarea'));for(var i=0;i<all.length;i++){var el=all[i],lab=el.parentElement&&el.parentElement.querySelector('label');var t=((lab&&lab.innerText)||el.getAttribute('aria-label')||el.placeholder||'').toLowerCase();if(labels.some(function(x){return t.indexOf(x)>=0}))return el}return null}
-  function findSaveButton(modal){return Array.prototype.slice.call(modal.querySelectorAll('button')).find(function(b){var t=(b.innerText||b.textContent||'').trim().toLowerCase();return t==='save'||t==='save case'||t==='save hearing'||t.indexOf('save')===0&&!t.indexOf('whatsapp')>=0})}
-  function openWA(url){if(url)window.open(url,'_blank','noopener,noreferrer')}
-  function caseMessage(s){var num=field(document.getElementById('modal')||document.body,['case number','case no','number']),title=field(document.getElementById('modal')||document.body,['case title','title']),date=field(document.getElementById('modal')||document.body,['next hearing','hearing date']);var ids=selectedClientIds(document.getElementById('modal')||document.body);if(!ids.length){var cid=field(document.getElementById('modal')||document.body,['client']);if(cid&&cid.value)ids=[cid.value]};var clients=ids.map(function(id){return getClient(s,id)}).filter(Boolean);if(!clients.length){alert('Please select at least one client with a valid mobile number.');return}var n=clients.find(function(c){return normalize(c.phone)});if(!n){alert('No valid mobile number is available for the selected client(s).');return}var msg='Dear '+clients.map(function(c){return c.name}).join(', ')+'\n\nThis is a case update from AdvocateDesk.';if(num&&num.value)msg+='\nCase: '+num.value;if(title&&title.value)msg+='\nCase Title: '+title.value;if(date&&date.value)msg+='\nNext Hearing Date: '+date.value;msg+='\n\nPlease contact the advocate\'s office for further information.';openWA('https://wa.me/'+normalize(n.phone)+'?text='+encodeURIComponent(msg))}
-  function hearingMessage(s,modal){var num=field(modal,['case number','case no','case']),date=field(modal,['hearing date','date']),time=field(modal,['hearing time','time']),court=field(modal,['court']),stage=field(modal,['stage','proceeding']);var caseNo=num&&num.value;var h=(s.hearings||[]).slice().reverse().find(function(x){return String(x.case)===String(caseNo)})||null;var client=null;if(h&&h.clientId)client=getClient(s,h.clientId);if(!client&&h&&Array.isArray(h.clientIds)&&h.clientIds.length)client=getClient(s,h.clientIds[0]);if(!client&&h)client=(s.clients||[]).find(function(c){return c.name===h.client})||null;if(!client&&caseNo){var c=(s.cases||[]).find(function(x){return String(x.number)===String(caseNo)});if(c){var ids=Array.isArray(c.clientIds)&&c.clientIds.length?c.clientIds:[c.clientId];client=getClient(s,ids[0])}}if(!client){alert('No client is linked to this hearing.');return}var phone=normalize(client.phone);if(!phone){alert('No valid mobile number is available for '+client.name+'.');return}var msg='Dear '+client.name+',\n\nThis is a hearing reminder from AdvocateDesk.';if(caseNo&&caseNo.value)msg+='\nCase: '+caseNo.value;if(h&&h.title)msg+='\nCase Title: '+h.title;if(date&&date.value)msg+='\nHearing Date: '+date.value;if(time&&time.value)msg+='\nHearing Time: '+time.value;if(court&&court.value)msg+='\nCourt: '+court.value;if(stage&&stage.value)msg+='\nStage: '+stage.value;msg+='\n\nPlease contact the advocate\'s office for any further information.';openWA('https://wa.me/'+phone+'?text='+encodeURIComponent(msg))}
-  function addButton(modal,type){if(!modal||modal.dataset.whatsappButtons)return;var heading=(modal.innerText||'').toLowerCase();if(type==='case'&&!heading.includes('new case')&&!heading.includes('edit case'))return;if(type==='hearing'&&!heading.includes('hearing'))return;var save=findSaveButton(modal);if(!save)return;modal.dataset.whatsappButtons='1';var b=document.createElement('button');b.type='button';b.className=save.className||'secondary';b.textContent='WhatsApp';b.style.marginLeft='8px';b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();var s=data();var before=(s.cases||[]).length+(s.hearings||[]).length;save.click();setTimeout(function(){var latest=data();if(type==='case')caseMessage(latest);else hearingMessage(latest,modal)},120)});save.insertAdjacentElement('afterend',b)}
-  function scan(){var m=document.getElementById('modal');if(!m||m.classList.contains('hidden'))return;var txt=(m.innerText||'').toLowerCase();if(txt.includes('new case')||txt.includes('edit case'))addButton(m,'case');else if(txt.includes('hearing'))addButton(m,'hearing')}
-  function start(){var o=new MutationObserver(function(){scan()});o.observe(document.body,{childList:true,subtree:true});scan();setInterval(scan,300)}
+  function data(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'null')||{}}catch(e){return {}}}
+  function clientById(s,id){return (s.clients||[]).find(function(c){return String(c.id)===String(id)})||null}
+  function value(id){var el=document.getElementById(id);return el?String(el.value||'').trim():''}
+  function selectedClientIds(){var sel=document.getElementById('f3');if(!sel)return[];return Array.prototype.slice.call(sel.selectedOptions||[]).map(function(o){return o.value}).filter(Boolean)}
+  function openWA(phone,message){var n=normalize(phone);if(!n){alert('No valid WhatsApp/mobile number is available for the selected client. Please update the client phone number.');return false}window.open('https://wa.me/'+n+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');return true}
+  function caseHandler(save){
+    var s=data(),ids=selectedClientIds(),clients=ids.map(function(id){return clientById(s,id)}).filter(Boolean);
+    var number=value('f1'),title=value('f2'),date=value('f5');
+    if(!number||!title||!clients.length)return;
+    var c=clients[0];
+    var msg='Dear '+c.name+',\n\nThis is a case update from AdvocateDesk.\nCase: '+number+'\nCase Title: '+title+(date?'\nNext Hearing Date: '+date:'')+'\n\nPlease contact the advocate\'s office for further information.';
+    save();
+    setTimeout(function(){openWA(c.phone,msg)},80);
+  }
+  function hearingHandler(save){
+    var s=data(),caseNo=value('f3'),date=value('f1'),time=value('f2'),court=value('f6'),stage=value('f7');
+    var c=(s.cases||[]).find(function(x){return String(x.number)===String(caseNo)});
+    if(!c||!date)return;
+    var ids=Array.isArray(c.clientIds)&&c.clientIds.length?c.clientIds:[c.clientId];
+    var client=clientById(s,ids[0]);
+    if(!client){alert('No client is linked to this hearing.');return}
+    var msg='Dear '+client.name+',\n\nThis is a hearing reminder from AdvocateDesk.\nCase: '+c.number+'\nCase Title: '+(c.title||'')+'\nHearing Date: '+date+(time?'\nHearing Time: '+time:'')+(court?'\nCourt: '+court:'')+(stage?'\nStage: '+stage:'')+'\n\nPlease contact the advocate\'s office for any further information.';
+    save();
+    setTimeout(function(){openWA(client.phone,msg)},80);
+  }
+  function enhance(){
+    var modal=document.getElementById('modal');if(!modal||modal.classList.contains('hidden'))return;
+    var heading=(modal.innerText||'').toLowerCase();
+    var isCase=heading.indexOf('new case')>=0;
+    var isHearing=heading.indexOf('new hearing')>=0;
+    if(!isCase&&!isHearing)return;
+    var buttons=Array.prototype.slice.call(modal.querySelectorAll('.form-actions button'));
+    var save=buttons.find(function(b){var t=(b.innerText||b.textContent||'').trim().toLowerCase();return t==='save'||t==='save case'||t==='save hearing'});
+    if(!save||save.dataset.saveWhatsappBound)return;
+    save.dataset.saveWhatsappBound='1';
+    save.textContent='Save & WhatsApp';
+    save.className='secondary';
+    save.onclick=null;
+    save.addEventListener('click',function(e){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(isCase)caseHandler(function(){if(window.saveCase)window.saveCase(null)});
+      else hearingHandler(function(){if(window.saveHearing)window.saveHearing(null)});
+    },true);
+  }
+  function start(){var o=new MutationObserver(enhance);o.observe(document.body,{childList:true,subtree:true});enhance()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
