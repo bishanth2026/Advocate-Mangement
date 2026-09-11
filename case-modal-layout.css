@@ -9,11 +9,15 @@
 .modal-body .form-grid>label{display:flex!important;flex-direction:column!important;gap:7px!important;min-width:0!important;font-size:12px!important;font-weight:650!important;color:#344054!important}
 .modal-body .form-grid>label>input,
 .modal-body .form-grid>label>select,
-.modal-body .form-grid>label>textarea{width:100%!important;min-width:0!important;max-width:100%!important;border:1px solid #d7dee9!important;border-radius:8px!important;padding:10px 11px!important;background:#fff!important;color:var(--ink)!important;font-size:13px!important;outline:none!important}
+.modal-body .form-grid>label>textarea,
+.modal-body .form-grid>label>.court-search-wrap>input{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;height:42px!important;border:1px solid #d7dee9!important;border-radius:8px!important;padding:10px 11px!important;background:#fff!important;color:var(--ink)!important;font-size:13px!important;outline:none!important}
+.modal-body .form-grid>label>.court-search-wrap{display:block!important;position:relative!important;width:100%!important;min-width:0!important;height:42px!important}
+.modal-body .form-grid>label>.court-search-wrap>input{display:block!important;margin:0!important}
 .modal-body .form-grid>label>input:focus,
 .modal-body .form-grid>label>select:focus,
-.modal-body .form-grid>label>textarea:focus{border-color:#6b8fd6!important;box-shadow:0 0 0 3px rgba(53,106,230,.10)!important}
-.modal-body .form-grid>label>select[multiple]{min-height:124px!important;padding:5px!important}
+.modal-body .form-grid>label>textarea:focus,
+.modal-body .form-grid>label>.court-search-wrap>input:focus{border-color:#6b8fd6!important;box-shadow:0 0 0 3px rgba(53,106,230,.10)!important}
+.modal-body .form-grid>label>select[multiple]{min-height:124px!important;height:auto!important;padding:5px!important}
 .modal-body .form-grid>label>small{font-weight:400!important;font-size:11px!important;color:var(--muted)!important;line-height:1.45!important}
 .modal-body .form-grid>label:nth-child(3){min-width:0!important}
 .form-actions{padding:16px 26px 22px!important;margin:0!important;border-top:1px solid var(--line)!important;flex:0 0 auto!important;background:#fff!important}
