@@ -7,29 +7,48 @@
     hidden.dispatchEvent(new Event('change',{bubbles:true}));
   }
 
-  function enhanceCivilCaseNumber(typeField,caseNumberField){
-    if(typeField.value!=='Civil')return;
-    if(caseNumberField.dataset.civilPrefixEnhanced==='1')return;
+  function clearEnhanced(label,caseNumberField){
+    const old=label&&label.querySelector('.case-number-type-wrap');
+    if(old)old.remove();
+    if(caseNumberField){
+      caseNumberField.type='text';
+      caseNumberField.dataset.caseNumberEnhanced='';
+      caseNumberField.dataset.civilPrefixEnhanced='';
+    }
+  }
 
+  function enhanceCaseNumber(typeField,caseNumberField){
     const label=caseNumberField.closest('label');
     if(!label)return;
-    caseNumberField.dataset.civilPrefixEnhanced='1';
+
+    clearEnhanced(label,caseNumberField);
+
+    const type=(typeField.value||'').trim();
+    if(type!=='Civil' && type!=='Criminal')return;
 
     const original=(caseNumberField.value||'').trim();
-    const match=original.match(/^(OS|OP)\s+(.*)$/i);
-    const prefix=match?match[1].toUpperCase():'OS';
+    const options=type==='Criminal'?[['CC','CC'],['CP','CP'],['ST','ST'],['MC','MC']]:[['OS','OS'],['OP','OP']];
+    const regex=type==='Criminal'?/^(CC|CP|ST|MC)\s+(.*)$/i:/^(OS|OP)\s+(.*)$/i;
+    const match=original.match(regex);
+    const prefix=match?match[1].toUpperCase():options[0][0];
     const number=match?match[2]:original;
 
     caseNumberField.type='hidden';
+    caseNumberField.dataset.caseNumberEnhanced='1';
 
     const wrap=document.createElement('div');
+    wrap.className='case-number-type-wrap';
     wrap.style.cssText='display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;width:100%;';
 
     const prefixSelect=document.createElement('select');
     prefixSelect.id='caseNumberPrefix';
     prefixSelect.style.cssText='width:100%;height:42px;box-sizing:border-box;border:1px solid #d7dee9;border-radius:8px;padding:10px 11px;background:#fff;color:var(--ink);font-size:13px;line-height:20px;outline:none;';
-    [['OS','OS'],['OP','OP']].forEach(function(x){
-      const o=document.createElement('option');o.value=x[0];o.textContent=x[1];if(x[0]===prefix)o.selected=true;prefixSelect.appendChild(o);
+    options.forEach(function(x){
+      const o=document.createElement('option');
+      o.value=x[0];
+      o.textContent=x[1];
+      if(x[0]===prefix)o.selected=true;
+      prefixSelect.appendChild(o);
     });
 
     const numberInput=document.createElement('input');
@@ -63,7 +82,11 @@
     const caseNumberLabel=caseNumberField.closest('label');
     if(!typeLabel||!caseNumberLabel||typeLabel.parentElement!==grid||caseNumberLabel.parentElement!==grid)return;
     if(typeLabel!==grid.firstElementChild)grid.insertBefore(typeLabel,caseNumberLabel);
-    enhanceCivilCaseNumber(typeField,caseNumberField);
+    enhanceCaseNumber(typeField,caseNumberField);
+    if(typeField.dataset.caseTypeListener!=='1'){
+      typeField.dataset.caseTypeListener='1';
+      typeField.addEventListener('change',function(){enhanceCaseNumber(typeField,caseNumberField)});
+    }
   }
 
   function boot(){
