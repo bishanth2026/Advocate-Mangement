@@ -54,40 +54,94 @@
     "Grama Nyayalaya Koduvalli"
   ];
 
+  function esc(v){return String(v).replace(/[&<>\"]/g,function(ch){return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch])});}
+
   function install(){
-    if(typeof window.openModal!=="function" || window.__advocateDeskCourtListInstalled)return;
-    window.__advocateDeskCourtListInstalled=true;
+    if(typeof window.openModal!=="function" || window.__advocateDeskCourtSearchInstalled)return;
+    window.__advocateDeskCourtSearchInstalled=true;
     const originalOpenModal=window.openModal;
+
     window.openModal=function(type,index){
       const result=originalOpenModal.apply(this,arguments);
       if(type!=="case")return result;
+
       const input=document.getElementById("f4");
-      if(!input || input.tagName.toLowerCase()==="select")return result;
+      if(!input || input.tagName.toLowerCase()!=="input")return result;
       const label=input.closest("label");
       if(!label)return result;
+
       const current=input.value||"";
-      const select=document.createElement("select");
-      select.id="f4";
-      select.setAttribute("aria-label","Court");
-      const placeholder=document.createElement("option");
-      placeholder.value="";
-      placeholder.textContent="-- Select Court --";
-      select.appendChild(placeholder);
-      COURTS.forEach(function(court){
-        const option=document.createElement("option");
-        option.value=court;
-        option.textContent=court;
-        if(court===current)option.selected=true;
-        select.appendChild(option);
-      });
-      if(current && !COURTS.includes(current)){
-        const custom=document.createElement("option");
-        custom.value=current;
-        custom.textContent=current+" (saved value)";
-        custom.selected=true;
-        select.insertBefore(custom,select.children[1]);
+      const wrap=document.createElement("div");
+      wrap.className="court-search-wrap";
+      wrap.style.position="relative";
+      wrap.style.width="100%";
+
+      input.placeholder="Search court by name or word...";
+      input.setAttribute("autocomplete","off");
+      input.setAttribute("role","combobox");
+      input.setAttribute("aria-expanded","false");
+      input.setAttribute("aria-autocomplete","list");
+
+      const list=document.createElement("div");
+      list.className="court-search-results";
+      list.setAttribute("role","listbox");
+      list.style.cssText="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:230px;overflow-y:auto;background:#fff;border:1px solid #dfe3ea;border-radius:9px;box-shadow:0 12px 30px rgba(15,23,42,.16);z-index:1000;padding:5px;";
+
+      wrap.appendChild(input);
+      wrap.appendChild(list);
+      label.replaceChild(wrap,input);
+
+      function showResults(query){
+        const q=String(query||"").trim().toLowerCase();
+        const matches=q?COURTS.filter(c=>c.toLowerCase().includes(q)):COURTS;
+        list.innerHTML="";
+        if(!matches.length){
+          const empty=document.createElement("div");
+          empty.textContent="No matching court found";
+          empty.style.cssText="padding:11px 10px;color:#667085;font-size:12px;";
+          list.appendChild(empty);
+        }else{
+          matches.forEach(function(court){
+            const option=document.createElement("div");
+            option.textContent=court;
+            option.setAttribute("role","option");
+            option.style.cssText="padding:10px 11px;border-radius:7px;cursor:pointer;font-size:12px;line-height:1.35;color:#18243a;";
+            option.addEventListener("mouseenter",function(){option.style.background="#eef4fb"});
+            option.addEventListener("mouseleave",function(){option.style.background="transparent"});
+            option.addEventListener("mousedown",function(e){
+              e.preventDefault();
+              input.value=court;
+              closeResults();
+              input.dispatchEvent(new Event("change",{bubbles:true}));
+            });
+            list.appendChild(option);
+          });
+        }
+        list.style.display="block";
+        input.setAttribute("aria-expanded","true");
       }
-      label.replaceChild(select,input);
+      function closeResults(){
+        list.style.display="none";
+        input.setAttribute("aria-expanded","false");
+      }
+
+      input.addEventListener("focus",function(){showResults(input.value)});
+      input.addEventListener("input",function(){showResults(input.value)});
+      input.addEventListener("keydown",function(e){
+        if(e.key==="Escape"){closeResults();return}
+        if(e.key==="Enter"){
+          const first=list.querySelector('[role="option"]');
+          if(first){e.preventDefault();first.dispatchEvent(new MouseEvent("mousedown",{bubbles:true,cancelable:true}))}
+        }
+      });
+      document.addEventListener("mousedown",function(e){
+        if(!wrap.contains(e.target))closeResults();
+      },{once:false});
+
+      if(current && !COURTS.includes(current)){
+        // Keep an existing saved custom value, while still allowing search.
+        input.value=current;
+      }
       return result;
     };
   }
