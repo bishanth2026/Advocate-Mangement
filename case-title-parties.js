@@ -22,6 +22,10 @@
       if((value||'').trim()===(client.name||'').trim() || (value||'').trim()===(client.id||'').trim()) option.selected=true;
       select.appendChild(option);
     });
+    const add=document.createElement('option');
+    add.value='__ADD_NEW_CLIENT__';
+    add.textContent='＋ Add New Client';
+    select.appendChild(add);
     if(value && !Array.from(select.options).some(function(o){return o.selected}) ){
       const custom=document.createElement('option');
       custom.value=value;
@@ -30,6 +34,56 @@
       select.appendChild(custom);
     }
     return select;
+  }
+  function refreshSelect(select,selectedId){
+    if(!select)return;
+    const placeholder=select.options[0]?.textContent||'Select client';
+    const id=select.id;
+    const fresh=makeClientSelect(id,selectedId,placeholder);
+    fresh.style.cssText=select.style.cssText;
+    select.replaceWith(fresh);
+    return fresh;
+  }
+  function addNewClient(select,role){
+    if(!window.P1 || typeof P1.state!=='function' || typeof P1.save!=='function'){
+      alert('Client management is not available. Please refresh the page and try again.');
+      return;
+    }
+    const title=role==='petitioner'?'Add New Petitioner':'Add New Respondent';
+    const formId='casePartyNewClientForm';
+    const body=`<form id="${formId}" onsubmit="return false" style="display:grid;gap:12px;padding:4px 0">
+      <label><span>Client Name *</span><input id="casePartyClientName" type="text" placeholder="Enter client name" required></label>
+      <label><span>Phone</span><input id="casePartyClientPhone" type="tel" placeholder="Enter mobile number"></label>
+      <label><span>Email</span><input id="casePartyClientEmail" type="email" placeholder="Enter email address"></label>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button type="button" class="secondary" onclick="p1CloseModal()">Cancel</button>
+        <button type="button" class="primary" id="casePartyClientSave">Save Client</button>
+      </div>
+    </form>`;
+    if(typeof p1OpenModal==='function')p1OpenModal(title,body);else{alert('Please refresh the page and try again.');return}
+    setTimeout(function(){
+      const name=document.getElementById('casePartyClientName');
+      name?.focus();
+      document.getElementById('casePartyClientSave')?.addEventListener('click',function(){
+        const clientName=(document.getElementById('casePartyClientName')?.value||'').trim();
+        const phone=(document.getElementById('casePartyClientPhone')?.value||'').trim();
+        const email=(document.getElementById('casePartyClientEmail')?.value||'').trim();
+        if(!clientName){alert('Client name is required.');name?.focus();return}
+        const s=P1.state();
+        const existing=s.clients.find(function(c){return String(c.name||'').trim().toLowerCase()===clientName.toLowerCase()});
+        let client=existing;
+        if(!client){
+          client={id:'CL-'+Date.now(),name:clientName,phone:phone,email:email,cases:0,status:'Active'};
+          s.clients.push(client);
+          P1.save(s);
+        }
+        p1CloseModal();
+        const selectedId=client.id||client.name;
+        const current=document.getElementById(select.id);
+        const fresh=refreshSelect(current,selectedId);
+        if(fresh){fresh.value=selectedId;fresh.dispatchEvent(new Event('change',{bubbles:true}))}
+      });
+    },0);
   }
   function enhance(){
     const modal=document.querySelector('.modal');
@@ -82,8 +136,22 @@
       titleField.dispatchEvent(new Event('input',{bubbles:true}));
       titleField.dispatchEvent(new Event('change',{bubbles:true}));
     }
-    pSelect.addEventListener('change',sync);
-    rSelect.addEventListener('change',sync);
+    pSelect.addEventListener('change',function(){
+      if(pSelect.value==='__ADD_NEW_CLIENT__'){
+        pSelect.value='';
+        addNewClient(pSelect,'petitioner');
+        return;
+      }
+      sync();
+    });
+    rSelect.addEventListener('change',function(){
+      if(rSelect.value==='__ADD_NEW_CLIENT__'){
+        rSelect.value='';
+        addNewClient(rSelect,'respondent');
+        return;
+      }
+      sync();
+    });
     [pSelect,rSelect].forEach(function(i){i.addEventListener('focus',function(){i.style.borderColor='#6b8fd6';i.style.boxShadow='0 0 0 3px rgba(53,106,230,.10)'});i.addEventListener('blur',function(){i.style.borderColor='#d7dee9';i.style.boxShadow='none'})});
     sync();
   }
