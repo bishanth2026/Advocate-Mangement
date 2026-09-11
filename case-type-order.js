@@ -112,7 +112,9 @@
 
   function boot(){
     moveTypeAboveCaseNumber();
-    new MutationObserver(moveTypeAboveCaseNumber).observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('click',function(){
+      window.setTimeout(moveTypeAboveCaseNumber,0);
+    },true);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
