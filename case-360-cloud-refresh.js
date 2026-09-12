@@ -1,7 +1,7 @@
 /* Keep Case 360 aligned with the latest Supabase case and related records. */
 (function(){
   'use strict';
-  var wrapped=false,crudWrapped=false,currentCase=null,refreshing=false;
+  var wrapped=false,crudWrapped=false,currentCase=null,refreshing=false,originalOpen=null;
   var KEY='advocateDeskData';
   function ready(){return !!(window.ADCloudCRUD&&window.ADCloudCRUD.ready&&window.ADCloudCRUD.ready());}
   function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){return {};}}
@@ -26,16 +26,16 @@
     write(s);return true;
   }
   async function refreshOpenCase(){
-    if(refreshing||!currentCase||typeof window.openCase360!=='function')return;
+    if(refreshing||!currentCase||!originalOpen)return;
     refreshing=true;
-    try{await refresh();window.dispatchEvent(new CustomEvent('advocate:case360-refresh',{detail:{caseId:currentCase}}));}
+    try{await refresh();window.dispatchEvent(new CustomEvent('advocate:case360-refresh',{detail:{caseId:currentCase}}));await originalOpen(currentCase);}
     catch(e){console.warn('[AdvocateDesk] automatic Case 360 refresh skipped:',e.message);}
     finally{refreshing=false;}
   }
   function install(){
     if(wrapped||typeof window.openCase360!=='function')return;
-    var original=window.openCase360;
-    window.openCase360=async function(id){currentCase=id;window.__case360CurrentId=id;if(ready())await refresh();return original(id);};
+    originalOpen=window.openCase360;
+    window.openCase360=async function(id){currentCase=id;window.__case360CurrentId=id;if(ready())await refresh();return originalOpen(id);};
     wrapped=true;
   }
   function installCrud(){
