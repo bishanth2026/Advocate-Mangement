@@ -16,9 +16,12 @@
     var petitioner=value(m,'Petitioner');
     var respondent=value(m,'Respondent');
     var time=value(m,'Hearing Time');
-    return {case_number:number,title:title,court:court,case_type:type,status:status,description:[petitioner?'Petitioner: '+petitioner:'',respondent?'Respondent: '+respondent:'',time?'Hearing Time: '+time:''].filter(Boolean).join('\n')};
+    var client=value(m,'Client');
+    var p={case_number:number||null,title:title||null,court:court||null,case_type:type||null,status:status||'Active',description:[petitioner?'Petitioner: '+petitioner:'',respondent?'Respondent: '+respondent:'',time?'Hearing Time: '+time:''].filter(Boolean).join('\n')||null};
+    if(client){var c=field(m,'Client');if(c&&c.value)p.client_id=c.value;}
+    return p;
   }
-  function findExistingId(m){var b=m.querySelector('[data-case-id]');if(b&&b.dataset.caseId)return b.dataset.caseId;return null;}
+  function findExistingId(m){var b=m.querySelector('[data-case-id]');if(b&&b.dataset.caseId)return b.dataset.caseId;var h=m.querySelector('input[name="case_id"],input[name="id"]');return h&&h.value?h.value:null;}
   async function saveCase(m){
     if(!ready())return false;
     var p=casePayload(m);if(!p.title&&!p.case_number){alert('Please enter a case number or case title.');return true;}
