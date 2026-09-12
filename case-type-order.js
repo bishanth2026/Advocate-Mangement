@@ -57,3 +57,45 @@
   function boot(){moveTypeAboveCaseNumber();document.addEventListener('click',function(){window.setTimeout(moveTypeAboveCaseNumber,0);},true);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+
+/* Prevent the case-party enhancer from changing the New Client form. */
+(function(){
+  'use strict';
+  function fixClientModal(){
+    var modal=document.querySelector('.modal');
+    if(!modal)return;
+    var heading=modal.querySelector('.modal-header h1,.modal-header h2,.modal-header h3,.modal-title,h1,h2,h3');
+    var title=String(heading&&heading.textContent||'').toLowerCase();
+    if(title.indexOf('new client')===-1 && title.indexOf('edit client')===-1)return;
+    var titleField=document.getElementById('f2');
+    if(titleField){
+      titleField.style.display='';
+      var label=titleField.closest('label');
+      if(label)label.style.display='none';
+    }
+    modal.querySelectorAll('.case-parties-wrap').forEach(function(el){el.remove();});
+    modal.querySelectorAll('label,div').forEach(function(el){
+      var t=String(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+      if(t==='petitioner' || t==='respondent' || t==='case title' || t==='select petitioner' || t==='select respondent'){
+        if(el.children.length<4)el.style.display='none';
+      }
+    });
+    var fields=[].slice.call(modal.querySelectorAll('input,textarea,select'));
+    var hasPhone=fields.some(function(el){return /phone|mobile|whatsapp/i.test((el.id||'')+' '+(el.name||'')+' '+(el.placeholder||'')+' '+(el.getAttribute('aria-label')||'') );});
+    if(!hasPhone){
+      var email=fields.find(function(el){return /email/i.test((el.id||'')+' '+(el.name||'')+' '+(el.placeholder||''));});
+      if(email){
+        var parent=email.closest('label')||email.parentElement;
+        var row=document.createElement('label');
+        row.innerHTML='<span>WhatsApp / Mobile Number</span><input id="clientWhatsAppPhone" name="phone" type="tel" inputmode="tel" placeholder="9876543210" autocomplete="tel">';
+        row.style.cssText=parent.style.cssText||'';
+        parent.parentNode.insertBefore(row,parent);
+      }
+    }
+  }
+  function boot(){
+    fixClientModal();
+    new MutationObserver(fixClientModal).observe(document.body,{childList:true,subtree:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
