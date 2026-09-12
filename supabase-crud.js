@@ -12,6 +12,12 @@
     if(!ready())throw new Error('Supabase session is not ready');
     options=options||{};var q=scopeQuery(table(name).select(options.select||'*'),name);
     if(name==='memberships')q=q.eq('user_id',session().userId).eq('is_active',true);
+    if(options.filters&&typeof options.filters==='object'){
+      Object.keys(options.filters).forEach(function(key){
+        var value=options.filters[key];
+        if(value!==undefined&&value!==null)q=q.eq(key,value);
+      });
+    }
     if(options.order)q=q.order(options.order,{ascending:options.ascending!==false});
     if(options.limit)q=q.limit(options.limit);
     var r=await q;if(r.error)throw r.error;return r.data||[];
