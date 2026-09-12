@@ -1,4 +1,14 @@
 (function(){
+  'use strict';
+  function loadCloud(){
+    if(window.ADMeetingCloud||document.querySelector('script[data-meeting-cloud]'))return;
+    var s=document.createElement('script');
+    s.src='meeting-supabase-sync.js?v=20260912-1';
+    s.async=false;
+    s.setAttribute('data-meeting-cloud','1');
+    document.head.appendChild(s);
+  }
+  loadCloud();
   var pending=null;
   function state(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'null')||{}}catch(e){return {}}}
   function save(s){localStorage.setItem('advocateDeskData',JSON.stringify(s))}
@@ -13,15 +23,10 @@
   function addCase(){var m=document.getElementById('modal');if(!m||m.classList.contains('hidden'))return;var txt=(m.innerText||'').toLowerCase();if(txt.indexOf('meeting')===-1)return;installStyle(m);if(document.getElementById('meetingCaseNumber'))return;
     var wrap=document.createElement('label');wrap.className='meeting-case-row';wrap.style.display='block';wrap.style.marginBottom='12px';wrap.innerHTML='<span style="display:block;margin-bottom:6px;font-weight:600">Case Number</span><select id="meetingCaseNumber" class="filter" style="width:100%;box-sizing:border-box"><option value="">Select case number</option></select>';
     var sel=wrap.querySelector('select');cases().forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.number;sel.appendChild(o)});
-    var first=m.querySelector('label');if(first&&first.parentElement)first.parentElement.insertBefore(wrap,first);else m.querySelector('.modal-card')?.appendChild(wrap);
-    sel.addEventListener('change',function(){var c=caseBy(sel.value);if(!c)return;var s=state(),cs=clients(c),cf=field(['client']),title=field(['case title']),court=field(['court']);
-      if(cf&&cf.tagName==='SELECT'&&cs.length){var wanted=ids(c);var firstId=wanted[0]||'';var opt=Array.prototype.slice.call(cf.options).find(function(o){return String(o.value)===String(firstId)||cs.some(function(x){return String(o.textContent).trim()===String(x.name).trim()})});if(opt)set(cf,opt.value)}
-      if(title)set(title,c.title||'');if(court)set(court,c.court||'');showClients(m,c,cs);pending={caseId:c.id,caseNumber:c.number,clientIds:ids(c),clientId:ids(c)[0]||'',caseTitle:c.title||'',court:c.court||''};
-    });
+    var first=m.querySelector('label');if(first&&first.parentElement)first.parentElement.insertBefore(wrap,first);else if(m.querySelector('.modal-card'))m.querySelector('.modal-card').appendChild(wrap);
+    sel.addEventListener('change',function(){var c=caseBy(sel.value);if(!c)return;var cs=clients(c),cf=field(['client']),title=field(['case title']),court=field(['court']);if(cf&&cf.tagName==='SELECT'&&cs.length){var wanted=ids(c);var firstId=wanted[0]||'';var opt=Array.prototype.slice.call(cf.options).find(function(o){return String(o.value)===String(firstId)||cs.some(function(x){return String(o.textContent).trim()===String(x.name).trim()})});if(opt)set(cf,opt.value)}if(title)set(title,c.title||'');if(court)set(court,c.court||'');pending={caseId:c.id,caseNumber:c.number,clientIds:ids(c),clientId:ids(c)[0]||'',caseTitle:c.title||'',court:c.court||''};});
   }
-  function showClients(m,c,cs){var old=m.querySelector('[data-meeting-case-clients]');if(old)old.remove();var cf=field(['client']);if(!cf||!cs.length)return;var box=document.createElement('div');box.setAttribute('data-meeting-case-clients','1');var title=document.createElement('div');title.style.fontWeight='600';title.style.marginBottom='6px';title.textContent='Case Client(s)';box.appendChild(title);cs.forEach(function(cl){var l=document.createElement('label');var cb=document.createElement('input');cb.type='checkbox';cb.checked=true;cb.disabled=true;cb.value=cl.id;var sp=document.createElement('span');sp.textContent=cl.name;l.appendChild(cb);l.appendChild(sp);box.appendChild(l)});var parent=cf.parentElement;if(parent){parent.insertBefore(box,cf);cf.style.display='none';parent.setAttribute('data-meeting-client-field','1')}}
-  function hookSave(){var m=document.getElementById('modal');if(!m||m.classList.contains('hidden'))return;if(m.dataset.meetingCaseHook==='1')return;var txt=(m.innerText||'').toLowerCase();if(txt.indexOf('meeting')===-1)return;m.dataset.meetingCaseHook='1';Array.prototype.slice.call(m.querySelectorAll('button')).forEach(function(b){var t=(b.innerText||b.textContent||'').trim().toLowerCase();if(t==='save'||t.indexOf('save')===0)b.addEventListener('click',function(){var s=document.getElementById('meetingCaseNumber');if(!s||!s.value)return;var c=caseBy(s.value);if(c)pending={caseId:c.id,caseNumber:c.number,clientIds:ids(c),clientId:ids(c)[0]||'',caseTitle:c.title||'',court:c.court||''}},true)})}
-  function persist(){if(!pending)return;var p=pending;pending=null;setTimeout(function(){var s=state(),a=s.meetings;if(!Array.isArray(a)||!a.length)return;var m=a[a.length-1];m.caseId=p.caseId;m.caseNumber=p.caseNumber;m.clientIds=p.clientIds||[];m.clientId=p.clientId||m.clientId||'';m.caseTitle=p.caseTitle||'';m.court=p.court||'';save(s)},220)}
-  function boot(){var o=new MutationObserver(function(){addCase();hookSave()});o.observe(document.body,{childList:true,subtree:true});addCase();hookSave();setInterval(persist,500)}
+  function hookSave(){var m=document.getElementById('modal');if(!m||m.classList.contains('hidden'))return;if(m.dataset.meetingCloudHook==='1')return;var txt=(m.innerText||'').toLowerCase();if(txt.indexOf('meeting')===-1)return;m.dataset.meetingCloudHook='1';Array.prototype.slice.call(m.querySelectorAll('button')).forEach(function(b){var t=(b.innerText||b.textContent||'').trim().toLowerCase();if(t==='save'||t.indexOf('save')===0)b.addEventListener('click',function(){var s=document.getElementById('meetingCaseNumber');if(!s||!s.value)return;var c=caseBy(s.value);if(c)pending={caseId:c.id,caseNumber:c.number,clientIds:ids(c),clientId:ids(c)[0]||'',caseTitle:c.title||'',court:c.court||''};setTimeout(function(){var st=state(),a=st.meetings;if(!Array.isArray(a)||!a.length)return;var mrow=a[a.length-1];mrow.caseId=pending&&pending.caseId||mrow.caseId;mrow.caseNumber=pending&&pending.caseNumber||mrow.caseNumber;mrow.clientIds=pending&&pending.clientIds||mrow.clientIds||[];mrow.clientId=pending&&pending.clientId||mrow.clientId||'';mrow.caseTitle=pending&&pending.caseTitle||'';mrow.court=pending&&pending.court||'';save(st);if(window.ADMeetingCloud&&window.ADMeetingCloud.save){window.ADMeetingCloud.save(mrow,mrow.id).catch(function(e){console.warn('[AdvocateDesk] Meeting cloud save failed',e);});}pending=null;},260)},true)})}
+  function boot(){var o=new MutationObserver(function(){addCase();hookSave()});o.observe(document.body,{childList:true,subtree:true});addCase();hookSave()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
