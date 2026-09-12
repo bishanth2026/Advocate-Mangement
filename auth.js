@@ -10,8 +10,6 @@
     require:function(){
       var a=this.get();
       if(!a){window.location.replace('login.html');return null}
-      // localStorage is display state only. When Supabase is available, validate the
-      // real cloud session in the background so copied/forged browser state is rejected.
       if(window.ADsupabase&&window.ADsupabase.auth&&window.ADsupabase.auth.getSession){
         window.ADsupabase.auth.getSession().then(function(result){
           var session=result&&result.data&&result.data.session;
@@ -19,6 +17,8 @@
             localStorage.removeItem('advocateDeskAuth');
             localStorage.removeItem('advocateDeskCurrentOrganization');
             window.location.replace('login.html');
+          }else{
+            updateIdentity(session.user,a);
           }
         }).catch(function(){
           localStorage.removeItem('advocateDeskAuth');
@@ -29,6 +29,22 @@
       return a;
     }
   };
+
+  function updateIdentity(user,stored){
+    var name=(stored&&stored.name)||user.user_metadata&&user.user_metadata.full_name||user.email||'Account';
+    var email=user.email||stored&&stored.email||'';
+    var initial=(name.trim().charAt(0)||'A').toUpperCase();
+    document.querySelectorAll('.profile-mini strong').forEach(function(node){node.textContent=name});
+    document.querySelectorAll('.profile-mini small').forEach(function(node){node.textContent=email||'Authorized workspace'});
+    document.querySelectorAll('.user-chip').forEach(function(node){
+      var spans=node.querySelectorAll('span');
+      if(spans.length)spans[0].textContent=name;
+      node.setAttribute('aria-label','Account menu for '+name);
+      var text=node.firstChild;
+      if(text&&text.nodeType===3)text.nodeValue=initial+' ';
+    });
+    document.querySelectorAll('.avatar').forEach(function(node){node.textContent=initial});
+  }
 
   function installLogoutMenu(){
     var chip=document.querySelector('.user-chip');
@@ -41,18 +57,22 @@
     function toggle(e){if(e){e.preventDefault();e.stopPropagation()}var open=menu.style.display==='block';if(open)close();else{menu.style.display='block';chip.setAttribute('aria-expanded','true')}}
     chip.addEventListener('click',toggle);chip.addEventListener('touchend',function(e){e.preventDefault();toggle(e)},{passive:false});menu.querySelector('[data-account-logout]').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.ADAuth.logout()});document.addEventListener('click',function(e){if(!wrap.contains(e.target))close()});document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installLogoutMenu,{once:true});else installLogoutMenu();
+  function start(){
+    installLogoutMenu();
+    var stored=window.ADAuth.get();
+    if(stored&&window.ADsupabase&&window.ADsupabase.auth&&window.ADsupabase.auth.getUser){
+      window.ADsupabase.auth.getUser().then(function(result){if(result&&result.data&&result.data.user)updateIdentity(result.data.user,stored)}).catch(function(){});
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  // Keep the legacy local session in sync with the cloud Auth session. Page authorization
-  // is enforced by Supabase Auth + RLS; localStorage is display state only.
   function syncCloudSession(){
     if(!window.ADsupabase)return;
     window.ADsupabase.auth.onAuthStateChange(function(_event,session){
       if(!session){localStorage.removeItem('advocateDeskAuth');localStorage.removeItem('advocateDeskCurrentOrganization')}
     });
   }
-  function start(){syncCloudSession()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  syncCloudSession();
 })();
 
 (function(){
