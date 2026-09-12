@@ -1,5 +1,6 @@
 (function(){
   var loader=document.createElement('script');loader.src='hearing-supabase-sync.js?v=20260912-2';loader.async=false;document.head.appendChild(loader);
+  var bridge=document.createElement('script');bridge.src='hearing-crud-bridge.js?v=20260912-1';bridge.async=false;document.head.appendChild(bridge);
   var K='advocateDeskData';
   function read(){try{return JSON.parse(localStorage.getItem(K)||'null')||{}}catch(e){return {}}}
   function save(s){localStorage.setItem(K,JSON.stringify(s))}
