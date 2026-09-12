@@ -7,7 +7,27 @@
       try{if(window.ADsupabase)await window.ADsupabase.auth.signOut()}catch(e){console.warn('Supabase signout failed',e)}
       localStorage.removeItem('advocateDeskAuth');localStorage.removeItem('advocateDeskCurrentOrganization');window.location.href='login.html'
     },
-    require:function(){var a=this.get();if(!a){window.location.replace('login.html');return null}return a}
+    require:function(){
+      var a=this.get();
+      if(!a){window.location.replace('login.html');return null}
+      // localStorage is display state only. When Supabase is available, validate the
+      // real cloud session in the background so copied/forged browser state is rejected.
+      if(window.ADsupabase&&window.ADsupabase.auth&&window.ADsupabase.auth.getSession){
+        window.ADsupabase.auth.getSession().then(function(result){
+          var session=result&&result.data&&result.data.session;
+          if(!session||!session.user){
+            localStorage.removeItem('advocateDeskAuth');
+            localStorage.removeItem('advocateDeskCurrentOrganization');
+            window.location.replace('login.html');
+          }
+        }).catch(function(){
+          localStorage.removeItem('advocateDeskAuth');
+          localStorage.removeItem('advocateDeskCurrentOrganization');
+          window.location.replace('login.html');
+        });
+      }
+      return a;
+    }
   };
 
   function installLogoutMenu(){
