@@ -1,4 +1,4 @@
-/* Adds a real status dropdown to Client modals only. */
+/* Adds a real status dropdown to Client modals only and loads client CRUD. */
 (function(){
   'use strict';
   var options=['Active','Inactive','Archived'];
@@ -35,8 +35,12 @@
       return;
     }
   }
+  function loadCrud(){
+    if(document.querySelector('script[data-client-crud]'))return;
+    var s=document.createElement('script');s.src='client-supabase-crud.js?v=20260912-1';s.async=false;s.setAttribute('data-client-crud','1');document.head.appendChild(s);
+  }
   function boot(){
-    enhance();
+    loadCrud();enhance();
     new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
