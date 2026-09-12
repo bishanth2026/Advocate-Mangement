@@ -1,0 +1,6 @@
+/* Keep the Clients directory focused on client contact details.
+   Case relationships remain available from the Cases and Case 360 screens. */
+#clientTable th:nth-child(4),
+#clientTable td:nth-child(4) {
+  display: none;
+}
