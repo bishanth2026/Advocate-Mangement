@@ -128,3 +128,6 @@ table tbody td:last-child > div[style*="display:flex"] > .secondary,.meeting-act
   .content > .grid-2:has(> .panel:first-child table) tbody td{padding:6px 0!important}
   .content > .grid-2:has(> .panel:first-child table) tbody td:last-child{grid-column:auto!important;padding-top:10px!important}
 }
+
+/* Keep internal client UUIDs available to the app but hidden from users. */
+#clientTable tbody td:first-child .muted{display:none!important}
