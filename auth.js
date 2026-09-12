@@ -1,8 +1,12 @@
 (function(){
+  'use strict';
   window.ADAuth={
     get:function(){try{return JSON.parse(localStorage.getItem('advocateDeskAuth')||'null')}catch(e){return null}},
     set:function(role,name,email){localStorage.setItem('advocateDeskAuth',JSON.stringify({role:role,name:name,email:email,loginAt:new Date().toISOString()}))},
-    logout:function(){localStorage.removeItem('advocateDeskAuth');window.location.href='login.html'},
+    logout:async function(){
+      try{if(window.ADsupabase)await window.ADsupabase.auth.signOut()}catch(e){console.warn('Supabase signout failed',e)}
+      localStorage.removeItem('advocateDeskAuth');localStorage.removeItem('advocateDeskCurrentOrganization');window.location.href='login.html'
+    },
     require:function(){var a=this.get();if(!a){window.location.replace('login.html');return null}return a}
   };
 
@@ -18,6 +22,17 @@
     chip.addEventListener('click',toggle);chip.addEventListener('touchend',function(e){e.preventDefault();toggle(e)},{passive:false});menu.querySelector('[data-account-logout]').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.ADAuth.logout()});document.addEventListener('click',function(e){if(!wrap.contains(e.target))close()});document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installLogoutMenu,{once:true});else installLogoutMenu();
+
+  // Keep the legacy local session in sync with the cloud Auth session. Page authorization
+  // is enforced by Supabase Auth + RLS; localStorage is display state only.
+  function syncCloudSession(){
+    if(!window.ADsupabase)return;
+    window.ADsupabase.auth.onAuthStateChange(function(_event,session){
+      if(!session){localStorage.removeItem('advocateDeskAuth');localStorage.removeItem('advocateDeskCurrentOrganization')}
+    });
+  }
+  function start(){syncCloudSession()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 
 (function(){
