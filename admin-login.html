@@ -1,1 +1,40 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Admin Login — AdvocateDesk</title><link rel="stylesheet" href="styles.css"></head><body class="login-page portal-login-page admin-login"><div class="login-card"><a class="back-login" href="index.html">← Back to AdvocateDesk</a><div class="login-brand"><div class="brand-mark">🛡️</div><div><strong>AdvocateDesk</strong><small>Admin Portal</small></div></div><h1>Admin Login</h1><p class="login-subtitle">Manage your law office and its authorized users.</p><form id="loginForm"><div class="field"><label>Email</label><input id="email" type="email" value="admin@advocatedesk.local" required></div><div class="field"><label>Password</label><input id="password" type="password" value="demo123" required></div><button class="login-submit" type="submit">Sign in as Admin</button><div id="error" class="login-error"></div></form><div class="demo-credentials"><strong>Demo access</strong><br>Use an Admin account created or managed by Super Admin.</div></div><script src="auth.js?v=20260909"></script><script>document.getElementById('loginForm').addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('email').value.trim().toLowerCase(),password=document.getElementById('password').value;var admins=[];try{admins=JSON.parse(localStorage.getItem('advocateDeskAdmins')||'[]')}catch(x){admins=[]}if(!admins.length){admins=[{id:'ADM-001',name:'Advocate Admin',email:'admin@advocatedesk.local',password:'demo123',organization:'Demo Law Office',status:'Active'}];localStorage.setItem('advocateDeskAdmins',JSON.stringify(admins))}var admin=admins.find(function(a){return String(a.email||'').toLowerCase()===email});if(!admin){document.getElementById('error').textContent='Admin account not found.';return}if(String(admin.status||'Active').trim().toLowerCase()!=='active'){document.getElementById('error').textContent='This Admin account is disabled by Super Admin.';return}if(admin.password!==password){document.getElementById('error').textContent='Incorrect password.';return}ADAuth.set('admin',admin.name,admin.email);localStorage.setItem('advocateDeskCurrentOrganization',admin.organization||'');window.location.replace('app.html');});</script></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Admin Login — AdvocateDesk</title><link rel="stylesheet" href="styles.css?v=20260908-2"></head><body class="login-page portal-login-page admin-login"><div class="login-card"><a class="back-login" href="index.html">← Back to AdvocateDesk</a><div class="login-brand"><div class="brand-mark">🛡️</div><div><strong>AdvocateDesk</strong><small>Admin Portal</small></div></div><h1>Admin Login</h1><p class="login-subtitle">Sign in with your authorized AdvocateDesk account.</p><form id="loginForm" autocomplete="on"><div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" required></div><div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required></div><button class="login-submit" type="submit">Sign in</button><div id="error" class="login-error" role="alert"></div></form><div class="demo-credentials">Secure cloud login is enabled. Your access is controlled by your AdvocateDesk organization membership and role.</div></div><script src="supabase-config.js?v=20260912-1"></script><script src="supabase.js?v=20260912-1"></script><script src="auth.js?v=20260912-1"></script><script>
+(function(){
+  'use strict';
+  var form=document.getElementById('loginForm'),error=document.getElementById('error');
+  function show(msg){error.textContent=msg||'';}
+  function rememberSession(user, membership, profile){
+    var session={role:membership.role,name:profile&&profile.full_name||user.user_metadata&&user.user_metadata.full_name||user.email,email:user.email,userId:user.id,organizationId:membership.organization_id,loginAt:new Date().toISOString()};
+    localStorage.setItem('advocateDeskAuth',JSON.stringify(session));
+    localStorage.setItem('advocateDeskCurrentOrganization',membership.organization_id);
+  }
+  async function waitForSupabase(){
+    if(window.ADsupabase)return window.ADsupabase;
+    return new Promise(function(resolve,reject){var timer=setTimeout(function(){window.removeEventListener('ad-supabase-ready',ready);reject(new Error('Supabase is not ready.'))},10000);function ready(){clearTimeout(timer);window.removeEventListener('ad-supabase-ready',ready);resolve(window.ADsupabase)}window.addEventListener('ad-supabase-ready',ready,{once:true})});
+  }
+  async function login(e){
+    e.preventDefault();show('');
+    var btn=form.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Signing in…';
+    try{
+      var client=await waitForSupabase();
+      if(!client)throw new Error('Supabase client unavailable.');
+      var email=document.getElementById('email').value.trim().toLowerCase();
+      var password=document.getElementById('password').value;
+      var res=await client.auth.signInWithPassword({email:email,password:password});
+      if(res.error)throw res.error;
+      var user=res.data.user;
+      if(!user)throw new Error('Login failed.');
+      var membershipRes=await client.from('memberships').select('id,organization_id,role,is_active').eq('user_id',user.id).eq('is_active',true).order('created_at',{ascending:true}).limit(1).maybeSingle();
+      if(membershipRes.error)throw membershipRes.error;
+      var membership=membershipRes.data;
+      if(!membership){await client.auth.signOut();throw new Error('Your account is not assigned to an active organization. Please contact the administrator.');}
+      var profileRes=await client.from('profiles').select('full_name').eq('id',user.id).maybeSingle();
+      if(profileRes.error)throw profileRes.error;
+      rememberSession(user,membership,profileRes.data);
+      window.location.replace('app.html');
+    }catch(err){show(err&&err.message?err.message:'Unable to sign in. Please check your email and password.');try{if(window.ADsupabase)await window.ADsupabase.auth.signOut()}catch(_){}}
+    finally{btn.disabled=false;btn.textContent='Sign in';}
+  }
+  form.addEventListener('submit',login);
+})();
+</script></body></html>
