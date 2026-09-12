@@ -1,21 +1,34 @@
 (function(){
   'use strict';
+  if(window.__hearingExportPrintLoaded)return;
+  window.__hearingExportPrintLoaded=true;
+
+  function headingText(node){
+    var clone=node.cloneNode(true);
+    var tools=clone.querySelector('[data-hearing-tools]');
+    if(tools)tools.remove();
+    return (clone.textContent||'').replace(/\s+/g,' ').trim();
+  }
+
   function getHeading(){
     var selectors=['#content .page-title','#content h1','#content h2','main h1','main h2'];
     for(var i=0;i<selectors.length;i++){
       var nodes=document.querySelectorAll(selectors[i]);
       for(var j=0;j<nodes.length;j++){
-        if(/^hearings$/i.test((nodes[j].textContent||'').trim()))return nodes[j];
+        if(/^hearings\b/i.test(headingText(nodes[j])))return nodes[j];
       }
     }
     return null;
   }
+
   function isHearingsPage(){
     return !!document.getElementById('hearingTable') && !!getHeading();
   }
+
   function csvCell(value){
     return '"'+String(value==null?'':value).replace(/"/g,'""').replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim()+'"';
   }
+
   function csv(){
     var table=document.getElementById('hearingTable');
     if(!table){alert('Open Hearings first.');return;}
@@ -34,10 +47,12 @@
     a.remove();
     setTimeout(function(){URL.revokeObjectURL(url);},1000);
   }
+
   function print(){
     if(!isHearingsPage()){alert('Open Hearings first.');return;}
     window.print();
   }
+
   function enhance(){
     var heading=getHeading();
     var old=document.querySelector('[data-hearing-tools]');
@@ -56,11 +71,13 @@
     p.className='secondary';p.textContent='Print';p.type='button';p.title='Print the hearing report';p.addEventListener('click',print);
     wrap.appendChild(b);wrap.appendChild(p);heading.appendChild(wrap);
   }
+
   enhance();
-  window.addEventListener('hashchange',function(){setTimeout(enhance,50)});
-  window.addEventListener('popstate',function(){setTimeout(enhance,50)});
+  function scheduleEnhance(){setTimeout(enhance,50);}
+  window.addEventListener('hashchange',scheduleEnhance);
+  window.addEventListener('popstate',scheduleEnhance);
   document.addEventListener('click',function(event){
     var link=event.target.closest&&event.target.closest('[data-page],.nav-item,a[href^="#"]');
-    if(link)setTimeout(enhance,50);
+    if(link)scheduleEnhance();
   },true);
 })();
