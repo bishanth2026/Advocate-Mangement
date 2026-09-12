@@ -3,29 +3,44 @@
 This document is the controlled checklist for moving AdvocateDesk from demo frontend to a sellable SaaS product.
 
 ## Current status
+
 - [x] Responsive frontend and core navigation
 - [x] Demo CRUD flows in browser storage
 - [x] Hearing CSV export and print controls
-- [ ] Production Supabase Auth with verified sessions
-- [ ] PostgreSQL schema for every module
-- [ ] Row Level Security and organization isolation
-- [ ] Secure document storage and access policies
-- [ ] Real finance, audit logs, and backups
+- [x] Supabase project connected in the integration layer
+- [x] PostgreSQL application tables created
+- [x] Foreign keys and organization membership structure present
+- [x] Row Level Security enabled on application tables
+- [x] Privacy policy, terms and support documents added
+- [x] Pilot launch checklist added
+- [x] Backup and recovery runbook added
+- [ ] Production Supabase Auth flow fully verified
+- [ ] Cross-organization isolation test with two real accounts
+- [ ] Full migration of all operational data from localStorage to Supabase verified
+- [ ] Secure private document bucket and signed URL workflow verified
+- [ ] Real finance, audit logs and backup restore test completed
 - [ ] Subscription/billing and plan limits
-- [ ] Privacy policy, terms, support and data-retention process
-- [ ] Mobile Safari and desktop regression testing
-- [ ] Production deployment and rollback plan
+- [ ] Data-retention and deletion process
+- [ ] Mobile Safari, Android Chrome and desktop regression testing
+- [ ] Production monitoring, incident response and rollback test
 
 ## Implementation order
-1. Connect Supabase Auth and remove local-session trust.
-2. Create database tables, indexes, foreign keys and organization membership.
-3. Add RLS policies and test cross-organization access denial.
-4. Migrate Cases, Clients, Hearings, Tasks and Meetings from localStorage to Supabase.
-5. Add secure Storage buckets for documents.
-6. Complete Finance, reports and audit history.
-7. Add billing, onboarding, support and legal pages.
+
+1. Verify Supabase Auth, logout and session recovery.
+2. Complete the two-account organization-isolation test.
+3. Migrate Cases, Clients, Hearings, Tasks and Meetings from localStorage to Supabase.
+4. Add private Storage buckets for documents and verify access rules.
+5. Complete Finance, reports and audit history.
+6. Configure backups and perform a restore drill.
+7. Add billing, onboarding, support and retention workflows.
 8. Run the release test matrix on iPhone Safari, Android Chrome and desktop.
-9. Tag a release only after all unchecked items are completed.
+9. Configure monitoring and rollback procedures.
+10. Tag a release only after all launch blockers are completed.
+
+## Pilot status
+
+A controlled pilot may be used with known users while the remaining checks are completed. Do not upload highly sensitive client documents until private document storage has been verified.
 
 ## Release gate
-Do not market the product as production-ready until authentication, RLS, backups, billing, legal documents and the regression test matrix are complete.
+
+Do not market the product as fully production-ready until authentication, organization isolation, secure document storage, backups/recovery, billing, retention, monitoring and regression testing are complete.
