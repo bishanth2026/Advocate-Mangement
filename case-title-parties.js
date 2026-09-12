@@ -5,6 +5,12 @@
       return data&&Array.isArray(data.clients)?data.clients:[];
     }catch(e){return []}
   }
+  function isCaseModal(modal){
+    const text=(modal.innerText||modal.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    const heading=modal.querySelector('h1,h2,h3,.modal-title,.modal-header strong');
+    const headingText=(heading?.textContent||'').toLowerCase();
+    return /new case|edit case|case details|case file/.test(headingText) || (/case title/.test(text)&&!/new client|edit client/.test(headingText));
+  }
   function makeClientSelect(id,value,placeholder){
     const select=document.createElement('select');
     select.id=id;
@@ -87,7 +93,7 @@
   }
   function enhance(){
     const modal=document.querySelector('.modal');
-    if(!modal)return;
+    if(!modal || !isCaseModal(modal))return;
     const titleField=document.getElementById('f2');
     if(!titleField || titleField.dataset.partiesEnhanced==='1')return;
     const label=titleField.closest('label');
