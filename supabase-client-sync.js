@@ -16,10 +16,22 @@
   }
   async function remove(id){if(!ready())throw new Error('Cloud session is not ready');if(!validId(id))return null;return window.ADCloudCRUD.remove('clients',id);}
   window.ADClientCloud={list:list,save:save,remove:remove,ready:ready};
+
   function modal(){return document.querySelector('#modal:not(.hidden),.modal:not(.hidden)');}
   function value(m,selectors){for(var i=0;i<selectors.length;i++){var e=m.querySelector(selectors[i]);if(e&&e.value!=null)return e.value;}return '';}
   function clientId(m){var e=m.querySelector('[data-client-id],input[name="client_id"],input[name="id"]');return e?(e.dataset.clientId||e.value||null):null;}
-  function isClient(m){var text=(m.innerText||'').toLowerCase();return text.indexOf('client')!==-1&&!/meeting|case|hearing|task/.test(text);}
+
+  /* Only identify a modal as a client modal when its heading explicitly says
+     New/Edit Client. The old text-only check incorrectly matched case forms
+     because case forms contain a "Clients" field. */
+  function isClient(m){
+    if(!m)return false;
+    var heading=m.querySelector('h1,h2,h3,.modal-title,.modal-header strong');
+    var title=((heading&&heading.textContent)||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(!/^(new|edit|update)\s+client(?:\b|\s)/.test(title))return false;
+    if(/case|hearing|meeting|task|document/.test(title))return false;
+    return true;
+  }
   function hook(){
     var m=modal();if(!m||!isClient(m)||m.dataset.clientCloudHook==='1')return;
     var buttons=m.querySelectorAll('button');
