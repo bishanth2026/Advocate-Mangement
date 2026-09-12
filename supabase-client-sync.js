@@ -14,7 +14,33 @@
     if(!p.name)throw new Error('Client name is required');
     return validId(id)?window.ADCloudCRUD.update('clients',id,p):window.ADCloudCRUD.insert('clients',p);
   }
-  async function remove(id){if(!ready())throw new Error('Cloud session is not ready');if(!validId(id))return null;return window.ADCloudCRUD.remove('clients',id);}
+  async function remove(id){
+    if(!ready())throw new Error('Cloud session is not ready');
+    if(!validId(id))return null;
+
+    /* Remove only cases explicitly linked to this client. Unlinked cases are
+       preserved, so deleting a client cannot accidentally delete unrelated cases. */
+    var linkedCases=[];
+    try{
+      linkedCases=await window.ADCloudCRUD.list('cases',{filters:{client_id:id}});
+    }catch(e){
+      console.warn('[AdvocateDesk] linked case lookup skipped:',e.message||e);
+    }
+    for(var i=0;i<linkedCases.length;i++){
+      if(linkedCases[i]&&validId(linkedCases[i].id)){
+        await window.ADCloudCRUD.remove('cases',linkedCases[i].id);
+      }
+    }
+    var result=await window.ADCloudCRUD.remove('clients',id);
+
+    /* Keep the offline cache consistent with the cloud delete. */
+    var s=read();
+    s.clients=(s.clients||[]).filter(function(x){return String(x.id)!==String(id);});
+    var deletedIds=linkedCases.map(function(x){return String(x.id);});
+    s.cases=(s.cases||[]).filter(function(x){return deletedIds.indexOf(String(x.id))<0&&String(x.clientId||x.client_id||'')!==String(id);});
+    write(s);
+    return result;
+  }
   window.ADClientCloud={list:list,save:save,remove:remove,ready:ready};
 
   function modal(){return document.querySelector('#modal:not(.hidden),.modal:not(.hidden)');}
@@ -47,8 +73,8 @@
         if(/^(delete client|delete|remove client|remove)$/.test(t)){
           b.dataset.clientCloudHook='1';b.addEventListener('click',function(){
             var id=clientId(m);if(!validId(id)||!ready())return;
-            if(!confirm('Delete this client from Supabase?'))return;
-            remove(id).then(function(){var s=read();s.clients=(s.clients||[]).filter(function(x){return String(x.id)!==String(id);});write(s);alert('Client deleted from Supabase.');location.reload();}).catch(function(e){alert('Could not delete client: '+(e.message||e));});
+            if(!confirm('Delete this client and its linked cases from Supabase? Unlinked cases will be preserved.'))return;
+            remove(id).then(function(){alert('Client deleted. Linked cases were also removed.');location.reload();}).catch(function(e){alert('Could not delete client: '+(e.message||e));});
           },true);
         }
       })(buttons[i]);
