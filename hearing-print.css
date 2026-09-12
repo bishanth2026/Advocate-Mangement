@@ -1,0 +1,25 @@
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  html, body { background: #fff !important; color: #111 !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sidebar, .topbar, .mobile-overlay, .mobile-menu,
+  .page-title button, [data-hearing-tools],
+  #hearingSearch, #hearingPeriodFilter, #hearingStageFilter,
+  .hearing-filters, .hearing-actions,
+  button, .no-print { display: none !important; }
+  #app, .main { display: block !important; min-height: 0 !important; width: 100% !important; margin: 0 !important; }
+  .content { padding: 0 !important; max-width: none !important; margin: 0 !important; }
+  .page-title { display: block !important; margin: 0 0 8mm !important; }
+  .page-title h1 { font-size: 20pt !important; color: #111 !important; }
+  .page-title p { font-size: 10pt !important; color: #444 !important; }
+  .panel { border: 0 !important; box-shadow: none !important; overflow: visible !important; background: #fff !important; }
+  .panel-head { display: none !important; }
+  table { width: 100% !important; min-width: 0 !important; table-layout: fixed !important; border-collapse: collapse !important; }
+  th, td { padding: 7px 6px !important; font-size: 9pt !important; color: #111 !important; border: 1px solid #cbd5e1 !important; vertical-align: top !important; overflow-wrap: anywhere !important; }
+  th { background: #eef2f7 !important; font-weight: 700 !important; }
+  th:last-child, td:last-child { display: none !important; }
+  tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .badge { border: 1px solid #94a3b8 !important; background: #fff !important; color: #111 !important; }
+  .case-link { color: #111 !important; text-decoration: none !important; }
+  #hearingResultCount { display: block !important; margin: 0 0 5mm !important; font-size: 10pt !important; color: #333 !important; }
+}
