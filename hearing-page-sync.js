@@ -1,39 +1,12 @@
 (function(){
+  var loader=document.createElement('script');loader.src='hearing-supabase-sync.js?v=20260912-2';loader.async=false;document.head.appendChild(loader);
   var K='advocateDeskData';
   function read(){try{return JSON.parse(localStorage.getItem(K)||'null')||{}}catch(e){return {}}}
   function save(s){localStorage.setItem(K,JSON.stringify(s))}
-  function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]})}
+  function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;' }[m]})}
   function fmt(v){if(!v)return '—';var d=new Date(String(v).slice(0,10)+'T00:00:00');return isNaN(d)?esc(v):d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
-  function syncCases(){
-    var s=read();s.cases=Array.isArray(s.cases)?s.cases:[];s.clients=Array.isArray(s.clients)?s.clients:[];s.hearings=Array.isArray(s.hearings)?s.hearings:[];
-    s.cases.forEach(function(c){
-      if(!c.next||!c.number)return;
-      var ids=Array.isArray(c.clientIds)?c.clientIds.slice():[];if(!ids.length&&c.clientId)ids=[c.clientId];
-      var clients=s.clients.filter(function(x){return ids.indexOf(x.id)>=0});
-      if(!ids.length&&c.client){var one=s.clients.find(function(x){return x.name===c.client});if(one){ids=[one.id];clients=[one]}}
-      var h=s.hearings.find(function(x){return x.source==='case-next-hearing'&&String(x.caseId)===String(c.id)})
-        ||s.hearings.find(function(x){return x.source==='case-next-hearing'&&String(x.case)===String(c.number)});
-      var data={id:h&&h.id||('HEAR-CASE-'+c.id),source:'case-next-hearing',caseId:c.id,date:c.next,time:h&&h.time||'',case:c.number,title:c.title||'',client:clients.map(function(x){return x.name}).join(', ')||c.client||'',clientId:ids[0]||'',clientIds:ids,clientNames:clients.map(function(x){return x.name}),court:c.court||'',stage:h&&h.stage||'Scheduled'};
-      if(h)Object.assign(h,data);else s.hearings.push(data);
-    });
-    save(s);return s;
-  }
-  function render(){
-    var s=syncCases(),content=document.getElementById('content');if(!content)return;
-    if(window.P1&&P1.nav)P1.nav('hearings');
-    var rows=s.hearings.slice().sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''))});
-    function clientNames(h){if(Array.isArray(h.clientNames)&&h.clientNames.length)return h.clientNames.join(', ');if(h.client)return h.client;var c=s.clients.find(function(x){return x.id===h.clientId});return c?c.name:'—'}
-    content.innerHTML='<div class="page-title"><div><h1>Hearings</h1><p>Upcoming court dates and proceedings</p></div><button class="primary" onclick="openModal(\'hearing\')">＋ New</button></div>'+
-      '<div class="panel"><table id="hearingTable"><thead><tr><th>Date</th><th>Time</th><th>Case</th><th>Client(s)</th><th>Court</th><th>Stage</th><th>Action</th></tr></thead><tbody>'+
-      (rows.length?rows.map(function(h,i){var realIndex=s.hearings.indexOf(h);return '<tr><td><strong>'+fmt(h.date)+'</strong></td><td>'+esc(h.time||'Time not set')+'</td><td><strong>'+esc(h.case||'')+'</strong><br><span class="muted">'+esc(h.title||'')+'</span></td><td>'+esc(clientNames(h))+'</td><td>'+esc(h.court||'—')+'</td><td><span class="badge '+(h.stage==='Scheduled'?'blue':'gold')+'">'+esc(h.stage||'Scheduled')+'</span></td><td><button class="secondary" onclick="openEditModal(\'hearing\','+realIndex+')">Edit</button></td></tr>'}).join(''):'<tr><td colspan="7"><div class="empty">No hearings scheduled.</div></td></tr>')+
-      '</tbody></table></div>';
-  }
-  function patch(){
-    if(typeof window.navigate==='function'&&!window.navigate.__hearingPageSync){
-      var old=window.navigate;function nav(page){if(page==='hearings'){render();return}return old.apply(this,arguments)}nav.__hearingPageSync=true;window.navigate=nav;
-    }
-    document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.nav-item[data-page="hearings"]');if(b){e.preventDefault();e.stopImmediatePropagation();render()}},true);
-  }
-  function start(){patch();if(location.hash==='#hearings')render()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  function syncCases(){var s=read();s.cases=Array.isArray(s.cases)?s.cases:[];s.clients=Array.isArray(s.clients)?s.clients:[];s.hearings=Array.isArray(s.hearings)?s.hearings:[];s.cases.forEach(function(c){if(!c.next||!c.number)return;var ids=Array.isArray(c.clientIds)?c.clientIds.slice():[];if(!ids.length&&c.clientId)ids=[c.clientId];var clients=s.clients.filter(function(x){return ids.indexOf(x.id)>=0});var h=s.hearings.find(function(x){return x.source==='case-next-hearing'&&String(x.caseId)===String(c.id)})||s.hearings.find(function(x){return x.source==='case-next-hearing'&&String(x.case)===String(c.number)});var data={id:h&&h.id||('HEAR-CASE-'+c.id),source:'case-next-hearing',caseId:c.id,date:c.next,time:h&&h.time||'',case:c.number,title:c.title||'',client:clients.map(function(x){return x.name}).join(', ')||c.client||'',clientId:ids[0]||'',clientIds:ids,clientNames:clients.map(function(x){return x.name}),court:c.court||'',stage:h&&h.stage||'Scheduled'};if(h)Object.assign(h,data);else s.hearings.push(data)});save(s);return s}
+  function render(){var s=syncCases(),content=document.getElementById('content');if(!content)return;if(window.P1&&P1.nav)P1.nav('hearings');var rows=s.hearings.slice().sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''))});function clientNames(h){if(Array.isArray(h.clientNames)&&h.clientNames.length)return h.clientNames.join(', ');if(h.client)return h.client;var c=s.clients.find(function(x){return x.id===h.clientId});return c?c.name:'—'}content.innerHTML='<div class="page-title"><div><h1>Hearings</h1><p>Upcoming court dates and proceedings</p></div><button class="primary" onclick="openModal(\'hearing\')">＋ New</button></div><div class="panel"><table id="hearingTable"><thead><tr><th>Date</th><th>Time</th><th>Case</th><th>Client(s)</th><th>Court</th><th>Stage</th><th>Action</th></tr></thead><tbody>'+(rows.length?rows.map(function(h){var realIndex=s.hearings.indexOf(h);return '<tr><td><strong>'+fmt(h.date)+'</strong></td><td>'+esc(h.time||'Time not set')+'</td><td><strong>'+esc(h.case||'')+'</strong><br><span class="muted">'+esc(h.title||'')+'</span></td><td>'+esc(clientNames(h))+'</td><td>'+esc(h.court||'—')+'</td><td><span class="badge '+(h.stage==='Scheduled'?'blue':'gold')+'">'+esc(h.stage||'Scheduled')+'</span></td><td><button class="secondary" onclick="openEditModal(\'hearing\','+realIndex+')">Edit</button></td></tr>'}).join(''):'<tr><td colspan="7"><div class="empty">No hearings scheduled.</div></td></tr>')+'</tbody></table></div>'}
+  function patch(){if(typeof window.navigate==='function'&&!window.navigate.__hearingPageSync){var old=window.navigate;function nav(page){if(page==='hearings'){render();return}return old.apply(this,arguments)}nav.__hearingPageSync=true;window.navigate=nav}document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.nav-item[data-page="hearings"]');if(b){e.preventDefault();e.stopImmediatePropagation();render()}},true)}
+  function start(){patch();if(location.hash==='#hearings')render()}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
