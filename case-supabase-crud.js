@@ -10,7 +10,7 @@
   function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){return {};}}
   function write(s){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){console.warn('[AdvocateDesk] case cache write failed',e);}}
   function validId(id){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id||''));}
-  function mapRow(r){return {id:r.id,caseNumber:r.case_number||'',title:r.title||'',court:r.court||'',caseType:r.case_type||'',status:r.status||'Active',description:r.description||'',clientId:r.client_id||'',createdAt:r.created_at||'',updatedAt:r.updated_at||'',_cloud:true};}
+  function mapRow(r){return {id:r.id,caseNumber:r.case_number||'',title:r.title||'',court:r.court||'',caseType:r.case_type||'',status:r.status||'Active',description:r.description||'',clientId:r.client_id||'',next:r.next_hearing||r.nextHearing||'',nextTime:r.next_hearing_time||r.nextTime||'',createdAt:r.created_at||'',updatedAt:r.updated_at||'',_cloud:true};}
   async function syncCases(){if(!ready())return;var rows=await window.ADCloudCRUD.list('cases',{order:'created_at',ascending:false});var s=read();s.cases=(rows||[]).map(mapRow);write(s);}
   function casePayload(m){
     var number=value(m,'Case Number')||value(m,'Case No');
@@ -21,8 +21,9 @@
     var petitioner=value(m,'Petitioner');
     var respondent=value(m,'Respondent');
     var time=value(m,'Hearing Time');
+    var next=value(m,'Next Hearing');
     var client=value(m,'Client');
-    var p={case_number:number||null,title:title||null,court:court||null,case_type:type||null,status:status||'Active',description:[petitioner?'Petitioner: '+petitioner:'',respondent?'Respondent: '+respondent:'',time?'Hearing Time: '+time:''].filter(Boolean).join('\n')||null};
+    var p={case_number:number||null,title:title||null,court:court||null,case_type:type||null,status:status||'Active',next_hearing:next||null,next_hearing_time:time||null,description:[petitioner?'Petitioner: '+petitioner:'',respondent?'Respondent: '+respondent:''].filter(Boolean).join('\n')||null};
     if(client){var c=field(m,'Client');if(c&&c.value&&validId(c.value))p.client_id=c.value;}
     return p;
   }
