@@ -1,38 +1,71 @@
-# AdvocateDesk — GitHub Frontend v1
+# AdvocateDesk — by Biznexco
 
-A responsive Advocate / Law Office Practice Management frontend designed for GitHub Pages.
+A responsive law-office practice-management application for advocates and legal teams.
 
-## Included in v1
+## Live application
+
+- Website: https://advocate.biznexco.in/
+- Demo app: https://advocate.biznexco.in/app.html
+- Admin login: https://advocate.biznexco.in/admin-login.html
+
+## Included modules
+
 - Dashboard
-- Cases
-- Clients
-- Hearings
-- Calendar
+- Case management
+- Client management
+- Hearings and calendar
 - Documents workspace
-- Tasks
-- Finance placeholder
+- Tasks and follow-ups
+- Finance, fees and payments workflow
 - Reports
 - Settings
 - Responsive mobile layout
-- Demo localStorage records
-- New Case / Client / Hearing / Task forms
-- Global case search
+- WhatsApp communication links
+- Supabase authentication and persistence integration
+- Organization/member data model
+- Audit-log data model
 
-## Important
-This version is intentionally **frontend-first**. It does not contain Supabase keys or production credentials.
+## Current release status
 
-The next phase will connect:
-- Supabase Auth
-- PostgreSQL
-- Row Level Security
-- Organizations / law firms
-- Roles and permissions
-- Case/client/hearing records
-- Secure document storage
-- Finance and audit logs
+AdvocateDesk is suitable for controlled demonstrations and pilot onboarding. It should not yet be advertised as fully production-ready until the remaining operational checks are completed.
 
-## GitHub Pages
-Upload `index.html`, `styles.css`, `app.js`, and `README.md` to the repository root. Enable GitHub Pages from the repository's Pages settings and select the main branch/root folder.
+### Completed or implemented
 
-## Data
-Demo entries are saved in browser localStorage. They are not shared between users and are not production data.
+- Frontend application and responsive layouts
+- GitHub Pages deployment structure
+- Supabase project integration
+- PostgreSQL tables for the main modules
+- Row Level Security enabled on application tables
+- Organization and membership relationships
+- Foreign-key and uniqueness constraints
+- Privacy Policy, Terms and Support documents
+- Persistence and session-handling integration
+- Security test plan and test-results documentation
+
+### Remaining before unrestricted commercial launch
+
+- Complete authenticated two-user organization-isolation test
+- Verify all login, logout, refresh and recovery flows on real devices
+- Complete secure document-storage policy and upload/download testing
+- Replace or confirm any remaining browser-only demo data paths
+- Configure payment/subscription workflow if paid billing is required
+- Configure backup, restore and recovery procedures
+- Complete mobile and desktop regression testing
+- Add production monitoring, error reporting and rollback procedure
+- Finalize customer onboarding, support contact and retention details
+
+## Important data note
+
+Do not use demo records as real client data. Before production use, confirm authentication, organization isolation, secure document storage, backups and recovery procedures.
+
+## Legal and support pages
+
+- Privacy Policy: `/PRIVACY.md`
+- Terms of Service: `/TERMS.md`
+- Support: `/SUPPORT.md`
+
+These Markdown files are repository documentation. They should be published or linked from the live application before commercial launch.
+
+## Development notes
+
+The application is hosted from the repository's main branch through GitHub Pages. Supabase credentials must remain limited to safe public client configuration; never place service-role keys or private secrets in frontend files.
