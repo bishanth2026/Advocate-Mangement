@@ -4,29 +4,14 @@
   const DATA_KEY='advocateDeskData';
   const ORG_KEY='advocateDeskCurrentOrganization';
   const HYDRATED_KEY='advocateDeskCloudHydrated';
-
   function emptyWorkspace(){return {cases:[],clients:[],hearings:[],tasks:[],meetings:[],documents:[],payments:[],expenses:[],notes:[],settings:{}};}
   function clearLocalWorkspace(){localStorage.removeItem(DATA_KEY);localStorage.removeItem(HYDRATED_KEY);}
-  function prepareEmptyWorkspace(){
-    try{
-      const raw=localStorage.getItem(DATA_KEY);
-      if(!raw){localStorage.setItem(DATA_KEY,JSON.stringify(emptyWorkspace()));return;}
-      const data=JSON.parse(raw);
-      if(!data||typeof data!=='object'){localStorage.setItem(DATA_KEY,JSON.stringify(emptyWorkspace()));return;}
-      ['cases','clients','hearings','tasks','meetings','documents','payments','expenses','notes'].forEach(k=>{if(!Array.isArray(data[k]))data[k]=[];});
-      if(!data.settings||typeof data.settings!=='object')data.settings={};
-      localStorage.setItem(DATA_KEY,JSON.stringify(data));
-    }catch(e){localStorage.setItem(DATA_KEY,JSON.stringify(emptyWorkspace()));}
-  }
+  function prepareEmptyWorkspace(){localStorage.setItem(DATA_KEY,JSON.stringify(emptyWorkspace()));}
   function cleanDemoLabels(){
     document.querySelectorAll('p,.notice,.empty,.stat-foot').forEach(node=>{
       const text=node.textContent||'';
       if(/demo mode|supabase will be connected|stored in this browser|demo workspace|demo data/i.test(text)){
-        node.textContent=text
-          .replace(/Demo mode is active\. Records are stored in this browser for now\. Supabase will be connected in the next phase\.?/gi,'Cloud workspace connected. Your records are stored securely for your organization.')
-          .replace(/Demo Workspace/gi,'Cloud Workspace')
-          .replace(/No documents in demo mode yet\.?/gi,'No documents have been added yet.')
-          .replace(/Demo data/gi,'Workspace data');
+        node.textContent=text.replace(/Demo mode is active\. Records are stored in this browser for now\. Supabase will be connected in the next phase\.?/gi,'Cloud workspace connected. Your records are stored securely for your organization.').replace(/Demo Workspace/gi,'Cloud Workspace').replace(/No documents in demo mode yet\.?/gi,'No documents have been added yet.').replace(/Demo data/gi,'Workspace data');
       }
     });
   }
@@ -61,7 +46,6 @@
       localStorage.setItem('advocateDeskAuth',JSON.stringify(session));
       localStorage.setItem(ORG_KEY,m.data.organization_id);
       window.AD_ACTIVE_SESSION=session;
-      prepareEmptyWorkspace();
       await hydrateWorkspace(session);
       window.ADsupabase.auth.onAuthStateChange(function(_event,newSession){if(!newSession){clearLocalWorkspace();localStorage.removeItem('advocateDeskAuth');localStorage.removeItem(ORG_KEY);window.location.replace('admin-login.html');}});
     }catch(e){console.error('Secure session check failed',e);}
