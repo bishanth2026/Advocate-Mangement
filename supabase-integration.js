@@ -4,10 +4,12 @@
   const DATA_KEY='advocateDeskData';
   const ORG_KEY='advocateDeskCurrentOrganization';
   const HYDRATED_KEY='advocateDeskCloudHydrated';
+  const RELOAD_KEY='advocateDeskCloudReloaded';
   let activeSession=null;
   let originalSetItem=null;
   let persistTimer=null;
   let persisting=false;
+  let hydrating=false;
   function emptyWorkspace(){return {cases:[],clients:[],hearings:[],tasks:[],meetings:[],documents:[],payments:[],expenses:[],notes:[],settings:{}};}
   function clearLocalWorkspace(){localStorage.removeItem(DATA_KEY);localStorage.removeItem(HYDRATED_KEY);}
   function prepareEmptyWorkspace(){if(originalSetItem)originalSetItem(DATA_KEY,JSON.stringify(emptyWorkspace()));else localStorage.setItem(DATA_KEY,JSON.stringify(emptyWorkspace()));}
@@ -20,7 +22,7 @@
     });
   }
   function schedulePersist(value){
-    if(!activeSession||!window.ADsupabase||!value)return;
+    if(hydrating||!activeSession||!window.ADsupabase||!value)return;
     clearTimeout(persistTimer);
     persistTimer=setTimeout(function(){persistWorkspace(value);},300);
   }
@@ -48,8 +50,17 @@
       if(key===DATA_KEY){try{schedulePersist(JSON.parse(value));}catch(error){console.error('Workspace data format error',error);}}
     };
   }
+  function reloadOnceAfterHydration(){
+    if(!document.getElementById('content'))return;
+    try{
+      if(sessionStorage.getItem(RELOAD_KEY)==='1'){sessionStorage.removeItem(RELOAD_KEY);return;}
+      sessionStorage.setItem(RELOAD_KEY,'1');
+      window.location.reload();
+    }catch(error){console.warn('Cloud hydration reload skipped',error);}
+  }
   async function hydrateWorkspace(session){
     if(!window.ADsupabase||!session||!session.userId||!session.organizationId)return;
+    hydrating=true;
     try{
       const result=await window.ADsupabase.from('workspace_data').select('data,updated_at').eq('organization_id',session.organizationId).eq('user_id',session.userId).order('updated_at',{ascending:false}).limit(1).maybeSingle();
       if(result.error){console.error('Workspace cloud load failed',result.error);prepareEmptyWorkspace();return;}
@@ -64,6 +75,7 @@
       cleanDemoLabels();
       window.setTimeout(cleanDemoLabels,250);
     }catch(error){console.error('Workspace hydration failed',error);prepareEmptyWorkspace();}
+    finally{hydrating=false;reloadOnceAfterHydration();}
   }
   async function boot(){
     if(!window.ADsupabase)return;
