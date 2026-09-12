@@ -3,6 +3,7 @@
   'use strict';
   var KEY='advocateDeskData';
   var LOADED='advocateDeskCloudLoaded';
+  var cloudSave=null;
   function wait(){
     if(window.ADsupabase&&window.AD_ACTIVE_SESSION)return Promise.resolve();
     return new Promise(function(resolve){
@@ -33,13 +34,24 @@
         var up=await client.from('workspace_data').upsert(payload,{onConflict:'organization_id,user_id'});
         if(up.error)throw up.error;
       }
-      window.ADCloudWorkspace={
-        save:async function(data){
-          var result=await client.from('workspace_data').upsert({organization_id:session.organizationId,user_id:session.userId,data:data,updated_at:new Date().toISOString()},{onConflict:'organization_id,user_id'});
-          if(result.error)console.warn('Cloud workspace save failed',result.error);
-        }
+      cloudSave=async function(data){
+        var result=await client.from('workspace_data').upsert({organization_id:session.organizationId,user_id:session.userId,data:data,updated_at:new Date().toISOString()},{onConflict:'organization_id,user_id'});
+        if(result.error)console.warn('Cloud workspace save failed',result.error);
       };
+      window.ADCloudWorkspace={save:cloudSave};
+      installSaveBridge();
     }catch(err){console.warn('Cloud workspace sync unavailable; local mode retained.',err)}
+  }
+  function installSaveBridge(){
+    if(window.ADCloudWorkspaceSaveBridgeInstalled)return;
+    window.ADCloudWorkspaceSaveBridgeInstalled=true;
+    var original=localStorage.setItem.bind(localStorage);
+    localStorage.setItem=function(key,value){
+      original(key,value);
+      if(key===KEY&&cloudSave){
+        try{cloudSave(JSON.parse(value));}catch(e){console.warn('Invalid workspace data',e)}
+      }
+    };
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();
 })();
