@@ -3,7 +3,6 @@
   'use strict';
   var activeCase=null;
   function read(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')||{};}catch(e){return {};}}
-  function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m];});}
   function findCase(){
     var s=read(),heading=document.querySelector('#content h1');
     if(!heading||heading.textContent.trim()!=='Case 360')return null;
@@ -12,7 +11,50 @@
     return (s.cases||[]).find(function(c){return String(c.number||'').trim()===number||String(c.id||'').trim()===number;})||null;
   }
   function action(label,fn){var b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();fn();});return b;}
-  function open(type){if(typeof window.openModal==='function')window.openModal(type);else if(typeof window.navigate==='function')window.navigate(type==='hearing'?'hearings':type==='task'?'tasks':type==='document'?'documents':'client-management');}
+  function visibleModal(){
+    var nodes=document.querySelectorAll('#modal,[role="dialog"],.modal,.dialog');
+    for(var i=nodes.length-1;i>=0;i--){var n=nodes[i];if(n&&n.offsetParent!==null)return n;}
+    return document.getElementById('modal')||document.body;
+  }
+  function fieldMatches(el,words){
+    var text=((el.name||'')+' '+(el.id||'')+' '+(el.placeholder||'')+' '+(el.getAttribute('aria-label')||'')).toLowerCase();
+    if(el.parentElement)text+=' '+(el.parentElement.innerText||'').toLowerCase();
+    return words.some(function(w){return text.indexOf(w)>=0;});
+  }
+  function setField(el,value){
+    if(!el||value==null||value==='')return false;
+    var v=String(value),done=false;
+    if(el.tagName==='SELECT'){
+      var opts=Array.prototype.slice.call(el.options||[]);
+      var hit=opts.find(function(o){return String(o.value)===v||String(o.text).trim()===v||String(o.text).toLowerCase().indexOf(v.toLowerCase())>=0;});
+      if(hit){el.value=hit.value;done=true;}
+    }else{el.value=v;done=true;}
+    if(done){el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
+    return done;
+  }
+  function prefill(){
+    if(!window.ADCase360ActiveCase)return;
+    var c=window.ADCase360ActiveCase,m=visibleModal();
+    var els=Array.prototype.slice.call(m.querySelectorAll('input,select,textarea'));
+    var caseValue=c.id||c.number||'';
+    var clientValue=c.clientId||c.client_id||'';
+    els.forEach(function(el){
+      if(fieldMatches(el,['case_id','caseid','case number','case no','case name','select case','related case']))setField(el,caseValue);
+      else if(fieldMatches(el,['client_id','clientid','client name','select client','related client']))setField(el,clientValue);
+    });
+    var hidden=m.querySelectorAll('input[type="hidden"]');
+    hidden.forEach(function(el){
+      var n=(el.name||el.id||'').toLowerCase();
+      if(n.indexOf('case')>=0)setField(el,caseValue);
+      if(n.indexOf('client')>=0)setField(el,clientValue);
+    });
+  }
+  function open(type){
+    window.ADCase360PrefillType=type;
+    if(typeof window.openModal==='function')window.openModal(type);
+    else if(typeof window.navigate==='function')window.navigate(type==='hearing'?'hearings':type==='task'?'tasks':type==='document'?'documents':'client-management');
+    [50,180,450,900].forEach(function(ms){setTimeout(prefill,ms);});
+  }
   function add(){
     var content=document.getElementById('content');if(!content)return;
     var heading=content.querySelector('h1');if(!heading||heading.textContent.trim()!=='Case 360')return;
