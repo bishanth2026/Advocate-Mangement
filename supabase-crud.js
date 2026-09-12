@@ -22,11 +22,17 @@
   }
   async function update(name,id,row){
     if(!ready())throw new Error('Supabase session is not ready');
-    var r=scopeQuery(table(name).update(row||{}).eq('id',id),name);var result=await r.select().single();if(result.error)throw result.error;return result.data;
+    var q=scopeQuery(table(name).update(row||{}).eq('id',id),name);
+    if(name==='profiles')q=q.eq('id',session().userId);
+    if(name==='memberships')q=q.eq('user_id',session().userId);
+    var result=await q.select().single();if(result.error)throw result.error;return result.data;
   }
   async function remove(name,id){
     if(!ready())throw new Error('Supabase session is not ready');
-    var r=scopeQuery(table(name).delete().eq('id',id),name);if((await r).error)throw (await r).error;return true;
+    var q=scopeQuery(table(name).delete().eq('id',id),name);
+    if(name==='profiles')q=q.eq('id',session().userId);
+    if(name==='memberships')q=q.eq('user_id',session().userId);
+    var result=await q;if(result.error)throw result.error;return true;
   }
   window.ADCloudCRUD={list:list,insert:insert,update:update,remove:remove,ready:ready};
 })();
