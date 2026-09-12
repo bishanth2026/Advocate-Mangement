@@ -7,6 +7,5 @@
   async function save(h,id){if(!ready())throw new Error('Cloud session is not ready');var p=clean(h);if(!p.date)throw new Error('Hearing date is required');return validId(id)?window.ADCloudCRUD.update('hearings',id,p):window.ADCloudCRUD.insert('hearings',p);}
   async function remove(id){if(!ready())throw new Error('Cloud session is not ready');return validId(id)?window.ADCloudCRUD.remove('hearings',id):null;}
   async function list(){if(!ready())throw new Error('Cloud session is not ready');return window.ADCloudCRUD.list('hearings',{order:'date',ascending:true});}
-  window.ADHe aringCloud=null;
-  window.AD HearingCloud={save:save,remove:remove,list:list,ready:ready};
+  window.ADHearingCloud={save:save,remove:remove,list:list,ready:ready};
 })();
