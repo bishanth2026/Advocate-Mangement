@@ -18,10 +18,16 @@
     var local=Array.isArray(s.meetings)?s.meetings:[];
     var mapped=(rows||[]).map(function(r){return {id:r.id,clientId:r.client_id||'',caseId:r.case_id||'',subject:r.subject||'',details:r.details||'',date:r.date||'',time:r.time||'',mode:r.mode||'',location:r.location||'',_cloud:true};});
     var byId={};mapped.forEach(function(r){byId[String(r.id)]=r;});
-    var merged=local.filter(function(r){return !r.id||!byId[String(r.id)];}).concat(mapped);
-    s.meetings=merged;localStorage.setItem('advocateDeskData',JSON.stringify(s));
-    return merged;
+    s.meetings=local.filter(function(r){return !r.id||!byId[String(r.id)];}).concat(mapped);
+    localStorage.setItem('advocateDeskData',JSON.stringify(s));
+    return s.meetings;
   }
   async function remove(id){if(!ready())throw new Error('Cloud session is not ready');return validId(id)?window.ADCloudCRUD.remove('meetings',id):null;}
   window.ADMeetingCloud={ready:ready,save:save,list:list,sync:sync,remove:remove};
+  var tries=0;
+  function bootSync(){
+    if(ready()){sync().catch(function(e){console.warn('[AdvocateDesk] Meeting sync skipped:',e.message);});return;}
+    if(tries++<20)setTimeout(bootSync,500);
+  }
+  setTimeout(bootSync,300);
 })();
