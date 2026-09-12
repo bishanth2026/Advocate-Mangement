@@ -16,9 +16,10 @@
       const title=first(item,['title','caseTitle','case_title','caseName','case_name'],petitioner&&respondent?`${petitioner} vs ${respondent}`:'Untitled case');
       const number=first(item,['number','caseNumber','case_number','caseNo','case_no','filingNumber','filing_number'],first(item,['id'],'—'));
       const next=first(item,['next','nextHearing','next_hearing','hearingDate','hearing_date','nextHearingDate','next_hearing_date'],'');
+      const nextTime=first(item,['nextTime','next_time','next_hearing_time','hearingTime','hearing_time'],'');
       const ids=Array.isArray(item.clientIds)?item.clientIds:Array.isArray(item.client_ids)?item.client_ids:(item.clientId?[item.clientId]:(item.client_id?[item.client_id]:[]));
       const client=first(item,['client','clientName','client_name'],'');
-      const normalized={...item,number,title,next,client,clientIds:ids};
+      const normalized={...item,number,title,next,nextTime,client,clientIds:ids};
       if(JSON.stringify(normalized)!==JSON.stringify(c)){changed=true;}
       return normalized;
     });
@@ -50,17 +51,17 @@
         if(clientCell.textContent!==clientText)clientCell.textContent=clientText;
         const nextCell=cells[3];
         const next=first(c,['next','nextHearing','next_hearing','hearingDate','hearing_date'],'');
-        const nextText=next?formatDate(next):'—';
+        const nextTime=first(c,['nextTime','next_time','next_hearing_time','hearingTime','hearing_time'],'');
+        const nextText=next?formatDate(next)+(nextTime?' • '+formatTime(nextTime):''):'—';
         if(nextCell.textContent!==nextText)nextCell.textContent=nextText;
       });
     }finally{patching=false;}
   }
   function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
   function formatDate(value){const raw=String(value||'').trim();if(!raw)return'—';const date=new Date(raw.length===10?raw+'T00:00:00':raw);if(Number.isNaN(date.getTime()))return'—';return date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+  function formatTime(value){const raw=String(value||'').trim();if(!raw)return'';const m=raw.match(/^(\d{1,2}):(\d{2})/);if(!m)return raw;let h=Number(m[1]);const min=m[2];const ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+min+' '+ap;}
   function run(){normalize();patchVisibleCases();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
-  observer=new MutationObserver(()=>{
-    if(!patching&&document.getElementById('caseTable'))patchVisibleCases();
-  });
+  observer=new MutationObserver(()=>{if(!patching&&document.getElementById('caseTable'))patchVisibleCases();});
   observer.observe(document.body,{childList:true,subtree:true});
 })();
