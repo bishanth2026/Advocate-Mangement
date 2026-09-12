@@ -35,6 +35,21 @@
     return true;
   }
 
+  function addOpenButton(row, caseId, caseNumber) {
+    if (row.querySelector('.hearing-open-case-btn')) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'hearing-open-case-btn';
+    button.textContent = 'Open Case 360';
+    button.style.cssText = 'margin-left:8px;padding:5px 9px;border:1px solid #cbd5e1;border-radius:6px;background:transparent;color:inherit;cursor:pointer;font-size:12px;';
+    button.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      goToCase(caseId, caseNumber);
+    });
+    row.appendChild(button);
+  }
+
   function enhance() {
     var hearingPage = document.querySelector('[data-page="hearings"].active') ||
       document.querySelector('[data-page="hearings"][aria-current="page"]');
@@ -56,6 +71,7 @@
       row.title = 'Open related Case 360';
       row.setAttribute('role', row.getAttribute('role') || 'button');
       row.setAttribute('tabindex', row.getAttribute('tabindex') || '0');
+      addOpenButton(row, caseId, caseNumber);
       function activate(event) {
         if (event.target.closest('button, a, input, select, textarea')) return;
         if (goToCase(caseId, caseNumber)) {
