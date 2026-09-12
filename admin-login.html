@@ -28,7 +28,7 @@
       if(membershipRes.error)throw membershipRes.error;
       var membership=membershipRes.data;
       if(!membership){await client.auth.signOut();throw new Error('Your account is not assigned to an active organization. Please contact the administrator.');}
-      if(['admin','super_admin'].indexOf(String(membership.role||'').toLowerCase())===-1){await client.auth.signOut();throw new Error('Admin access is required for this portal.');}
+      /* Any authenticated user with an active organization membership may enter. */
       var profileRes=await client.from('profiles').select('full_name').eq('id',user.id).maybeSingle();
       if(profileRes.error)throw profileRes.error;
       rememberSession(user,membership,profileRes.data);
