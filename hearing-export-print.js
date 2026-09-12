@@ -1,12 +1,11 @@
 (function(){
   'use strict';
-  var scheduled=false;
   function getHeading(){
     var selectors=['#content .page-title','#content h1','#content h2','main h1','main h2'];
     for(var i=0;i<selectors.length;i++){
       var nodes=document.querySelectorAll(selectors[i]);
       for(var j=0;j<nodes.length;j++){
-        if(/\bhearings\b/i.test((nodes[j].textContent||'').trim()))return nodes[j];
+        if(/^hearings$/i.test((nodes[j].textContent||'').trim()))return nodes[j];
       }
     }
     return null;
@@ -28,7 +27,6 @@
     setTimeout(function(){URL.revokeObjectURL(url)},500);
   }
   function enhance(){
-    scheduled=false;
     var heading=getHeading();
     var old=document.querySelector('[data-hearing-tools]');
     if(!isHearingsPage()){
@@ -44,15 +42,11 @@
     var p=document.createElement('button');p.className='secondary';p.textContent='Print';p.type='button';p.addEventListener('click',function(){window.print()});
     wrap.appendChild(b);wrap.appendChild(p);heading.appendChild(wrap);
   }
-  function schedule(){
-    if(scheduled)return;
-    scheduled=true;
-    if(window.requestAnimationFrame)window.requestAnimationFrame(enhance);else setTimeout(enhance,0);
-  }
   enhance();
-  if(window.MutationObserver){
-    new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
-  }else{
-    setTimeout(function(){setInterval(enhance,1000)},1000);
-  }
+  window.addEventListener('hashchange',function(){setTimeout(enhance,50)});
+  window.addEventListener('popstate',function(){setTimeout(enhance,50)});
+  document.addEventListener('click',function(event){
+    var link=event.target.closest&&event.target.closest('[data-page],.nav-item,a[href^="#"]');
+    if(link)setTimeout(enhance,50);
+  },true);
 })();
