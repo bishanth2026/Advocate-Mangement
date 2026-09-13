@@ -8,25 +8,38 @@
   function write(s){localStorage.setItem(KEY,JSON.stringify(s));}
   function modal(){return document.querySelector('.modal,.modal-overlay,[role="dialog"]');}
   function title(m){return ((m&&m.innerText)||'').toLowerCase();}
+  function labelText(m,n){
+    var parts=[];
+    if(n.id){var linked=m.querySelector('label[for="'+CSS.escape(n.id)+'"]');if(linked)parts.push(linked.innerText||'');}
+    var p=n.parentElement;
+    for(var i=0;p&&i<3;i++,p=p.parentElement)parts.push(p.innerText||'');
+    parts.push(n.getAttribute('aria-label')||'',n.getAttribute('placeholder')||'',n.getAttribute('name')||'',n.id||'');
+    return parts.join(' ').replace(/\s+/g,' ').toLowerCase();
+  }
   function field(m,words,index){
-    var nodes=Array.prototype.slice.call(m.querySelectorAll('input,select,textarea'));
-    var hit=nodes.find(function(n){var p=n.parentElement;return words.some(function(w){return ((p&&p.innerText)||'').toLowerCase().indexOf(w)>=0;});});
+    var nodes=Array.prototype.slice.call(m.querySelectorAll('input:not([type="hidden"]),select,textarea'));
+    var hit=nodes.find(function(n){
+      var text=labelText(m,n);
+      return words.some(function(w){return text.indexOf(w)>=0;});
+    });
     return hit||nodes[index]||null;
   }
-  function value(m,words,index){var n=field(m,words,index);return n?String(n.value||'').trim():'';}
-  function collect(m){return {
-    name:value(m,['client name','name'],0),
-    phone:value(m,['phone','whatsapp','mobile'],1),
-    email:value(m,['email'],2),
-    address:value(m,['address'],3),
-    notes:value(m,['notes'],4),
-    status:value(m,['status'],3)||'Active'
-  };}
+  function value(m,words,index){var n=field(m,words,index);return n?String(n.value==null?'':n.value).trim():'';}
+  function collect(m){
+    var name=value(m,['client name','full name','name'],0);
+    var phone=value(m,['phone','whatsapp','mobile'],1);
+    var email=value(m,['email','e-mail'],2);
+    var address=value(m,['address'],3);
+    var notes=value(m,['notes','remark'],4);
+    var status=value(m,['status'],3)||'Active';
+    return {name:name,phone:phone,email:email,address:address,notes:notes,status:status};
+  }
   function close(m){var x=m&&m.querySelector('[aria-label="Close"],.close,[data-close],button');if(x&&/×|x|close/i.test(x.innerText||x.getAttribute('aria-label')||''))x.click();else if(window.navigate)window.navigate('clients');}
   async function saveClient(m){
     if(!ready()){alert('Cloud connection is not ready. Please try again.');return;}
-    var data=collect(m);if(!data.name){alert('Client name is required.');return;}
-    var s=session();var editing=m.getAttribute('data-client-id')||'';var result;
+    var data=collect(m);
+    if(!data.name){alert('Client name is required. Please enter the name in the Client Name field.');return;}
+    var editing=m.getAttribute('data-client-id')||'';var result;
     try{
       if(editing)result=await window.ADCloudCRUD.update('clients',editing,data);
       else result=await window.ADCloudCRUD.insert('clients',data);
