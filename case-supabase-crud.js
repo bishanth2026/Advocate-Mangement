@@ -32,8 +32,15 @@
     if(!ready())return false;
     var p=casePayload(m);if(!p.title&&!p.case_number){alert('Please enter a case number or case title.');return true;}
     var id=findExistingId(m);
-    try{var row=id&&validId(id)?await window.ADCloudCRUD.update('cases',id,p):await window.ADCloudCRUD.insert('cases',p);var s=read();s.cases=Array.isArray(s.cases)?s.cases:[];var mapped=mapRow(Object.assign({},p,row||{},{id:(row&&row.id)||id}));var ix=s.cases.findIndex(function(x){return String(x.id)===String(mapped.id);});if(ix>=0)s.cases[ix]=mapped;else s.cases.unshift(mapped);write(s);alert('Case saved securely to Supabase.');window.location.reload();}
-    catch(e){console.error(e);alert('Could not save case to Supabase: '+(e.message||e));}
+    window.__AD_CASE_SAVE_IN_PROGRESS__=true;
+    try{
+      var isUpdate=!!(id&&validId(id));
+      var row=isUpdate?await window.ADCloudCRUD.update('cases',id,p):await window.ADCloudCRUD.insert('cases',p);
+      var s=read();s.cases=Array.isArray(s.cases)?s.cases:[];var mapped=mapRow(Object.assign({},p,row||{},{id:(row&&row.id)||id}));var ix=s.cases.findIndex(function(x){return String(x.id)===String(mapped.id);});if(ix>=0)s.cases[ix]=mapped;else s.cases.unshift(mapped);write(s);
+      alert(isUpdate?'Case updated and saved to Supabase.':'Case created and saved to Supabase.');
+      window.location.reload();
+    }catch(e){console.error(e);alert('Could not save case to Supabase: '+(e.message||e));}
+    finally{window.__AD_CASE_SAVE_IN_PROGRESS__=false;}
     return true;
   }
   function enhanceDelete(m){
