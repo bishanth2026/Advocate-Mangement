@@ -1,4 +1,4 @@
-/* Adds a real status dropdown to Client modals only. */
+/* Adds a real status dropdown to Client modals and loads the client CRUD handler. */
 (function(){
   'use strict';
   var options=['Active','Inactive','Archived'];
@@ -14,14 +14,8 @@
     var field=null;
     if(label.htmlFor)field=document.getElementById(label.htmlFor);
     if(!field)field=label.querySelector('input,textarea,select');
-    if(!field){
-      var parent=label.parentElement;
-      field=parent&&parent.querySelector('input,textarea,select');
-    }
-    if(!field){
-      var next=label.nextElementSibling;
-      field=next&&next.querySelector('input,textarea,select');
-    }
+    if(!field){var parent=label.parentElement;field=parent&&parent.querySelector('input,textarea,select');}
+    if(!field){var next=label.nextElementSibling;field=next&&next.querySelector('input,textarea,select');}
     if(!field||field.dataset.clientStatusDropdown==='1')return;
     var select=field;
     if(field.tagName.toLowerCase()!=='select'){
@@ -42,11 +36,17 @@
     });
     if(!options.includes(current))select.value='Active';
   }
-  function scan(){
-    document.querySelectorAll('.modal,[role="dialog"],.modal-content').forEach(enhance);
+  function scan(){document.querySelectorAll('.modal,[role="dialog"],.modal-content').forEach(enhance);}
+  function loadCrud(){
+    if(document.querySelector('script[data-client-crud]'))return;
+    var s=document.createElement('script');
+    s.src='client-supabase-crud.js?v=20260913-3';
+    s.async=false;
+    s.setAttribute('data-client-crud','1');
+    document.head.appendChild(s);
   }
   function boot(){
-    scan();
+    loadCrud();scan();
     new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
