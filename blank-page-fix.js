@@ -24,9 +24,13 @@
       if(btn.getAttribute('data-blank-fix')==='1')return;
       btn.setAttribute('data-blank-fix','1');
       btn.addEventListener('click',function(){
-        setTimeout(function(){if(!content.innerHTML.trim()||btn.getAttribute('data-page')==='dashboard'||btn.getAttribute('data-page')==='tasks'){
-          if(!content.innerHTML.trim())render(btn.getAttribute('data-page'));
-        }},250);
+        var page=btn.getAttribute('data-page');
+        if(page!=='dashboard'&&page!=='tasks')return;
+        setTimeout(function(){
+          var heading=content.querySelector('h1');
+          var expected=page==='tasks'?'Tasks':'Good morning, Advocate';
+          if(!content.innerHTML.trim()||!heading||heading.textContent.trim()!==expected)render(page);
+        },350);
       });
     });
     if(!content.innerHTML.trim())render('dashboard');
