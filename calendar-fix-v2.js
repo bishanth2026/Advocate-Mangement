@@ -1,0 +1,50 @@
+(function(){
+  'use strict';
+  const pad=n=>String(n).padStart(2,'0');
+  const monthName=d=>d.toLocaleString('en-IN',{month:'long',year:'numeric'});
+  const getData=()=>{try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')}catch(e){return {}}};
+  function renderCalendar(){
+    const content=document.getElementById('content');
+    if(!content)return;
+    const data=getData();
+    const now=new Date();
+    const year=Number.isInteger(window.calendarYear)?window.calendarYear:now.getFullYear();
+    const month=Number.isInteger(window.calendarMonth)?window.calendarMonth:now.getMonth();
+    const first=new Date(year,month,1);
+    const start=(first.getDay()+6)%7;
+    const days=new Date(year,month+1,0).getDate();
+    const events=[];
+    (data.hearings||[]).forEach(h=>events.push({date:h.date,title:(h.case||'Hearing')+' — '+(h.title||''),meta:(h.time||'')+' • '+(h.court||''),kind:'hearing'}));
+    (data.tasks||[]).forEach(t=>events.push({date:t.due,title:t.title||'Task',meta:'Task • '+(t.priority||''),kind:'task'}));
+    (data.meetings||[]).forEach(m=>events.push({date:m.date,title:m.subject||'Client Meeting',meta:'Meeting • '+(m.time||''),kind:'meeting'}));
+    const byDate={};
+    events.filter(e=>e.date).forEach(e=>(byDate[e.date]||(byDate[e.date]=[])).push(e));
+    let cells='';
+    for(let i=0;i<start;i++)cells+='<div class="calendar-cell muted-cell"></div>';
+    for(let day=1;day<=days;day++){
+      const key=year+'-'+pad(month+1)+'-'+pad(day);
+      const list=byDate[key]||[];
+      const today=key===now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+      cells+='<div class="calendar-cell '+(today?'today':'')+'"><div class="calendar-day">'+day+'</div>'+
+        list.slice(0,4).map(e=>'<div class="calendar-event '+e.kind+'" title="'+String(e.title+' — '+e.meta).replace(/"/g,'&quot;')+'">'+e.title+'</div>').join('')+
+        (list.length>4?'<div class="calendar-more">+'+(list.length-4)+' more</div>':'')+'</div>';
+    }
+    content.innerHTML='<div class="page-title"><div><h1>Calendar</h1><p>Monthly view • Hearings, tasks and client meetings</p></div><button class="primary" onclick="openModal(\'hearing\')">＋ New Hearing</button></div>'+ 
+      '<div class="panel calendar-panel"><div class="calendar-toolbar"><button class="secondary" onclick="calendarPrev()">‹</button><h2>'+monthName(first)+'</h2><button class="secondary" onclick="calendarNext()">›</button><button class="secondary" onclick="calendarToday()">Today</button></div>'+ 
+      '<div class="calendar-weekdays">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>'<div>'+x+'</div>').join('')+'</div><div class="calendar-grid">'+cells+'</div><div class="calendar-legend"><span class="legend-hearing">Hearings</span><span class="legend-task">Tasks</span><span class="legend-meeting">Meetings</span></div></div>';
+  }
+  window.calendar=renderCalendar;
+  window.calendarPrev=()=>{if(!Number.isInteger(window.calendarMonth)){const d=new Date();window.calendarYear=d.getFullYear();window.calendarMonth=d.getMonth();}window.calendarMonth--;if(window.calendarMonth<0){window.calendarMonth=11;window.calendarYear--;}renderCalendar();};
+  window.calendarNext=()=>{if(!Number.isInteger(window.calendarMonth)){const d=new Date();window.calendarYear=d.getFullYear();window.calendarMonth=d.getMonth();}window.calendarMonth++;if(window.calendarMonth>11){window.calendarMonth=0;window.calendarYear++;}renderCalendar();};
+  window.calendarToday=()=>{const d=new Date();window.calendarYear=d.getFullYear();window.calendarMonth=d.getMonth();renderCalendar();};
+  document.addEventListener('click',function(e){
+    const button=e.target.closest&&e.target.closest('[data-page="calendar"]');
+    if(!button)return;
+    e.preventDefault();
+    document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x===button));
+    renderCalendar();
+  },true);
+  const style=document.createElement('style');
+  style.textContent='.calendar-panel{padding:18px}.calendar-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.calendar-toolbar h2{margin:0;flex:1;text-align:center;font-size:20px}.calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.calendar-weekdays>div{text-align:center;font-weight:700;color:var(--muted,#64748b);padding:8px}.calendar-cell{min-height:110px;border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:7px;background:var(--card,#fff);overflow:hidden}.muted-cell{background:var(--surface,#f8fafc);opacity:.5}.calendar-day{font-weight:700;margin-bottom:5px}.calendar-cell.today{outline:2px solid #2563eb;background:#eff6ff}.calendar-event{font-size:11px;border-radius:5px;padding:4px 5px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.calendar-event.hearing{background:#dbeafe;color:#1d4ed8}.calendar-event.task{background:#fef3c7;color:#92400e}.calendar-event.meeting{background:#dcfce7;color:#166534}.calendar-more{font-size:11px;color:#64748b;margin-top:4px}.calendar-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:13px}.legend-hearing:before,.legend-task:before,.legend-meeting:before{content:'● '}.legend-hearing{color:#1d4ed8}.legend-task{color:#92400e}.legend-meeting{color:#166534}@media(max-width:700px){.calendar-cell{min-height:78px;padding:4px}.calendar-event{font-size:9px}.calendar-weekdays>div{font-size:11px}}';
+  document.head.appendChild(style);
+})();
