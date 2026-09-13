@@ -32,6 +32,35 @@
     });
   }
 
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+  }
+
+  function localClient(clientId) {
+    try {
+      var stored = JSON.parse(localStorage.getItem('advocateDeskData') || 'null');
+      return stored && Array.isArray(stored.clients)
+        ? stored.clients.find(function (client) { return String(client.id) === String(clientId); })
+        : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function resolveCloudId(clientId) {
+    if (isUuid(clientId)) return clientId;
+    if (!(window.ADCloudCRUD && window.ADCloudCRUD.list)) return null;
+    var local = localClient(clientId);
+    if (!local) return null;
+    var cloudClients = await window.ADCloudCRUD.list('clients', { select: 'id,name,phone,email' });
+    var match = (cloudClients || []).find(function (client) {
+      return (local.name && client.name === local.name) ||
+        (local.phone && client.phone === local.phone) ||
+        (local.email && client.email === local.email);
+    });
+    return match && match.id ? match.id : null;
+  }
+
   async function deleteClient(clientId, row) {
     var confirmed = window.confirm(
       'Delete this client? This removes the client record. Related cases will not be deleted.'
@@ -45,14 +74,15 @@
     }
 
     try {
-      if (window.ADCloudCRUD && window.ADCloudCRUD.ready()) {
-        await window.ADCloudCRUD.remove('clients', clientId);
+      if (window.ADCloudCRUD && window.ADCloudCRUD.ready && window.ADCloudCRUD.ready()) {
+        var cloudId = await resolveCloudId(clientId);
+        if (cloudId) await window.ADCloudCRUD.remove('clients', cloudId);
       }
 
       var stored = JSON.parse(localStorage.getItem('advocateDeskData') || 'null');
       if (stored && Array.isArray(stored.clients)) {
         stored.clients = stored.clients.filter(function (client) {
-          return client.id !== clientId;
+          return String(client.id) !== String(clientId);
         });
         localStorage.setItem('advocateDeskData', JSON.stringify(stored));
       }
