@@ -3,39 +3,29 @@
   window.ADAuth={
     get:function(){try{return JSON.parse(localStorage.getItem('advocateDeskAuth')||'null')}catch(e){return null}},
     set:function(role,name,email){localStorage.setItem('advocateDeskAuth',JSON.stringify({role:role,name:name,email:email,loginAt:new Date().toISOString()}))},
-    logout:async function(){
-      try{if(window.ADsupabase)await window.ADsupabase.auth.signOut()}catch(e){console.warn('Supabase signout failed',e)}
-      localStorage.removeItem('advocateDeskAuth');localStorage.removeItem('advocateDeskCurrentOrganization');window.location.href='login.html'
+    logout:function(){
+      localStorage.removeItem('advocateDeskAuth');
+      localStorage.removeItem('advocateDeskCurrentOrganization');
+      window.location.reload();
     },
     require:function(){
       var a=this.get();
-      if(!a){window.location.replace('login.html');return null}
-      if(window.ADsupabase&&window.ADsupabase.auth&&window.ADsupabase.auth.getSession){
-        window.ADsupabase.auth.getSession().then(function(result){
-          var session=result&&result.data&&result.data.session;
-          if(!session||!session.user){
-            localStorage.removeItem('advocateDeskAuth');
-            localStorage.removeItem('advocateDeskCurrentOrganization');
-            window.location.replace('login.html');
-          }else{
-            updateIdentity(session.user,a);
-          }
-        }).catch(function(){
-          localStorage.removeItem('advocateDeskAuth');
-          localStorage.removeItem('advocateDeskCurrentOrganization');
-          window.location.replace('login.html');
-        });
+      // Local Workspace mode: do not redirect to login or require Supabase.
+      // A local administrator identity keeps the existing app screens working.
+      if(!a){
+        a={role:'admin',name:'Advocate Admin',email:'',loginAt:new Date().toISOString()};
+        this.set(a.role,a.name,a.email);
       }
       return a;
     }
   };
 
   function updateIdentity(user,stored){
-    var name=(stored&&stored.name)||user.user_metadata&&user.user_metadata.full_name||user.email||'Account';
-    var email=user.email||stored&&stored.email||'';
+    var name=(stored&&stored.name)||user&&user.user_metadata&&user.user_metadata.full_name||user&&user.email||'Account';
+    var email=(user&&user.email)||(stored&&stored.email)||'';
     var initial=(name.trim().charAt(0)||'A').toUpperCase();
     document.querySelectorAll('.profile-mini strong').forEach(function(node){node.textContent=name});
-    document.querySelectorAll('.profile-mini small').forEach(function(node){node.textContent=email||'Authorized workspace'});
+    document.querySelectorAll('.profile-mini small').forEach(function(node){node.textContent=email||'Local Workspace'});
     document.querySelectorAll('.user-chip').forEach(function(node){
       var spans=node.querySelectorAll('span');
       if(spans.length)spans[0].textContent=name;
@@ -55,24 +45,15 @@
     menu.innerHTML='<button type="button" role="menuitem" data-account-logout style="display:flex;align-items:center;width:100%;border:0;background:transparent;padding:11px 12px;border-radius:7px;cursor:pointer;text-align:left;font:inherit;color:#111827;">🚪 <span style="margin-left:9px;font-weight:600;">Logout</span></button>';wrap.appendChild(menu);
     function close(){menu.style.display='none';chip.setAttribute('aria-expanded','false')}
     function toggle(e){if(e){e.preventDefault();e.stopPropagation()}var open=menu.style.display==='block';if(open)close();else{menu.style.display='block';chip.setAttribute('aria-expanded','true')}}
-    chip.addEventListener('click',toggle);chip.addEventListener('touchend',function(e){e.preventDefault();toggle(e)},{passive:false});menu.querySelector('[data-account-logout]').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.ADAuth.logout()});document.addEventListener('click',function(e){if(!wrap.contains(e.target))close()});document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+    chip.addEventListener('click',toggle);
+    chip.addEventListener('touchend',function(e){e.preventDefault();toggle(e)},{passive:false});
+    menu.querySelector('[data-account-logout]').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.ADAuth.logout()});
+    document.addEventListener('click',function(e){if(!wrap.contains(e.target))close()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
   }
-  function start(){
-    installLogoutMenu();
-    var stored=window.ADAuth.get();
-    if(stored&&window.ADsupabase&&window.ADsupabase.auth&&window.ADsupabase.auth.getUser){
-      window.ADsupabase.auth.getUser().then(function(result){if(result&&result.data&&result.data.user)updateIdentity(result.data.user,stored)}).catch(function(){});
-    }
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  function syncCloudSession(){
-    if(!window.ADsupabase)return;
-    window.ADsupabase.auth.onAuthStateChange(function(_event,session){
-      if(!session){localStorage.removeItem('advocateDeskAuth');localStorage.removeItem('advocateDeskCurrentOrganization')}
-    });
-  }
-  syncCloudSession();
+  function start(){installLogoutMenu();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 
 (function(){
