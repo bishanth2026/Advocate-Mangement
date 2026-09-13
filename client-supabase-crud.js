@@ -2,28 +2,16 @@
 (function(){
   'use strict';
   var KEY='advocateDeskData';
-  function session(){return window.AD_ACTIVE_SESSION||null;}
   function ready(){return !!(window.ADCloudCRUD&&window.ADCloudCRUD.ready&&window.ADCloudCRUD.ready());}
   function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){return {};}}
   function write(s){localStorage.setItem(KEY,JSON.stringify(s));}
   function modal(){return document.querySelector('.modal,.modal-overlay,[role="dialog"]');}
   function title(m){return ((m&&m.innerText)||'').toLowerCase();}
-  /* Client forms created by app.js use stable IDs f1..f4:
-     f1=name, f2=phone, f3=email, f4=status.
-     Always use these IDs first. The previous label-text search inspected
-     the whole parent form, so every field matched the first input and
-     saved the client name into phone, email and status. */
+  /* Client forms created by app.js use stable IDs f1..f4. */
   function byId(m,id){return m&&m.querySelector('#'+id);}
   function value(m,id){var n=byId(m,id);return n?String(n.value==null?'':n.value).trim():'';}
   function collect(m){
-    return {
-      name:value(m,'f1'),
-      phone:value(m,'f2'),
-      email:value(m,'f3'),
-      address:'',
-      notes:'',
-      status:value(m,'f4')||'Active'
-    };
+    return {name:value(m,'f1'),phone:value(m,'f2'),email:value(m,'f3'),address:'',notes:'',status:value(m,'f4')||'Active'};
   }
   function close(m){var x=m&&m.querySelector('[aria-label="Close"],.close,[data-close],button');if(x&&/×|x|close/i.test(x.innerText||x.getAttribute('aria-label')||''))x.click();else if(window.navigate)window.navigate('clients');}
   function isUuid(value){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));}
@@ -40,16 +28,17 @@
     if(!ready()){alert('Cloud connection is not ready. Please try again.');return;}
     var data=collect(m);
     if(!data.name){alert('Client name is required. Please enter the name in the Client Name field.');return;}
-    var editing=m.getAttribute('data-client-id')||'';
+    var editingId=m.getAttribute('data-client-id')||'';
+    var editingMode=!!editingId||/edit\s+client/i.test(title(m));
     try{
-      var result=editing?await window.ADCloudCRUD.update('clients',await resolveCloudId(editing)||editing,data):await window.ADCloudCRUD.insert('clients',data);
+      var result=editingId?await window.ADCloudCRUD.update('clients',await resolveCloudId(editingId)||editingId,data):await window.ADCloudCRUD.insert('clients',data);
       if(!result||result.error)throw (result&&result.error)||new Error('Client save failed');
       var local=read();local.clients=Array.isArray(local.clients)?local.clients:[];
-      var row=Object.assign({},data,{id:editing||result.id||('CL-'+Date.now()),cases:editing?(local.clients.find(function(c){return String(c.id)===String(editing);})||{}).cases||0:0});
+      var row=Object.assign({},data,{id:editingId||result.id||('CL-'+Date.now()),cases:editingId?(local.clients.find(function(c){return String(c.id)===String(editingId);})||{}).cases||0:0});
       var ix=local.clients.findIndex(function(c){return String(c.id)===String(row.id);});
       if(ix>=0)local.clients[ix]=Object.assign({},local.clients[ix],row);else local.clients.unshift(row);
       write(local);
-      alert(editing?'Client updated and saved to Supabase.':'Client created and saved to Supabase.');
+      alert(editingMode?'Client updated successfully.':'Client created and saved to Supabase.');
       close(m);
       if(window.navigate)window.navigate('clients');
     }catch(e){console.error(e);alert('Could not save client to Supabase: '+(e.message||e));}
