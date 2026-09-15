@@ -485,3 +485,10 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 .dash-cal-legend{display:flex;gap:18px;flex-wrap:wrap;padding:14px 16px 16px;color:#64748b;font-size:12px}
 .dash-cal-legend span{display:flex;align-items:center;gap:6px}
 @media(max-width:700px){.dash-cal-weekdays,.dash-cal-grid{gap:4px;padding:0 10px}.dash-cal-day{min-height:46px;padding:6px 2px}.dash-cal-day span{font-size:12px}.dash-cal-dots{margin-top:5px}.dash-cal-legend{padding:12px 10px}}
+/* Mobile menu touch reliability - does not alter desktop design */
+@media (max-width:720px){
+  #mobileMenu{pointer-events:auto;cursor:pointer;position:relative;z-index:1000;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .topbar{position:sticky;z-index:900}
+  .mobile-overlay{z-index:950}
+  .sidebar{z-index:1000}
+}
