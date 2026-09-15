@@ -2,16 +2,19 @@
   'use strict';
 
   function renameCaseClient() {
+    // Keep the left sidebar label unchanged.
     var navItem = document.querySelector('.nav-item[data-page="case-client"]');
     if (navItem) {
       var label = navItem.querySelector('span:not(.nav-icon)');
       if (label) label.textContent = 'Clients & Cases';
     }
 
+    // Change only the page/module heading to All Cases.
     var headings = document.querySelectorAll('h1, h2, h3, h4, .page-title, .section-title');
     headings.forEach(function (heading) {
-      if (heading.textContent.trim() === 'Case & Client' || heading.textContent.trim() === 'All Cases') {
-        heading.textContent = 'Clients & Cases';
+      var text = heading.textContent.trim();
+      if (text === 'Case & Client' || text === 'Clients & Cases') {
+        heading.textContent = 'All Cases';
       }
     });
   }
