@@ -465,3 +465,23 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 @media print{.finance-client-group{break-inside:avoid;page-break-inside:avoid}.finance-client-heading{background:#eef4ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.finance-client-group table{font-size:10px}}
 
 .report-filter{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:20px;padding:16px;background:#f7faff;border:1px solid #dce6f4;border-radius:12px}.report-filter .field{flex:1;min-width:240px}.report-filter input{width:100%;padding:12px 14px;border:1px solid #cbd7e8;border-radius:8px;background:#fff}.report-empty{padding:28px;text-align:center;border:1px dashed #cbd7e8;border-radius:12px;color:#667085}.report-selection-summary{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0;padding:14px 16px;background:#eef5ff;border-left:4px solid #2d67c7;border-radius:8px;color:#172b63}.report-selection-summary span{font-size:13px;color:#667085}
+
+/* Dashboard calendar */
+.dashboard-calendar-wrap{margin-top:16px}
+.dashboard-calendar{overflow:hidden}
+.dashboard-calendar .panel-head span{display:block;color:#718096;font-size:13px;margin-top:3px}
+.dash-cal-weekdays,.dash-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding:0 16px}
+.dash-cal-weekdays{margin-top:4px;margin-bottom:6px;color:#718096;font-size:12px;text-align:center;font-weight:700}
+.dash-cal-day{min-height:58px;border:1px solid #e3eaf4;border-radius:9px;background:#fff;color:#1f2937;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 3px;cursor:pointer;font:inherit}
+.dash-cal-day span{font-weight:700;font-size:14px}
+.dash-cal-day.muted-day{background:transparent;border-color:transparent;cursor:default}
+.dash-cal-day.today{background:#eaf2ff;border:2px solid #3975d5;color:#174ea6}
+.dash-cal-day.has-events{background:#f8fbff}
+.dash-cal-dots{display:flex;gap:3px;margin-top:8px}
+.dash-cal-dots b,.dash-cal-legend b{display:inline-block;width:7px;height:7px;border-radius:50%;background:#64748b}
+.dash-cal-dots .hearing,.dash-cal-legend .hearing{background:#e67e22}
+.dash-cal-dots .meeting,.dash-cal-legend .meeting{background:#16a085}
+.dash-cal-dots .task,.dash-cal-legend .task{background:#7c3aed}
+.dash-cal-legend{display:flex;gap:18px;flex-wrap:wrap;padding:14px 16px 16px;color:#64748b;font-size:12px}
+.dash-cal-legend span{display:flex;align-items:center;gap:6px}
+@media(max-width:700px){.dash-cal-weekdays,.dash-cal-grid{gap:4px;padding:0 10px}.dash-cal-day{min-height:46px;padding:6px 2px}.dash-cal-day span{font-size:12px}.dash-cal-dots{margin-top:5px}.dash-cal-legend{padding:12px 10px}}

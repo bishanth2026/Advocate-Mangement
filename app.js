@@ -103,6 +103,41 @@ if(auth.role!=="super_admin"){document.querySelectorAll(".admin-only").forEach(e
 
 function layout(title,sub,action=""){return `<div class="page-title"><div><h1>${title}</h1><p>${sub}</p></div>${action?`<button class="primary" onclick="${action}">＋ New</button>`:""}</div>`}
 
+function calendarEventsForDate(date){
+  const key=String(date||"").slice(0,10);
+  const events=[];
+  (state.hearings||[]).filter(x=>String(x.date||"").slice(0,10)===key).forEach(x=>events.push({type:"hearing",title:x.title||"Court Hearing",time:x.time||"",meta:[x.court,x.case,x.stage].filter(Boolean).join(" • ")}));
+  (state.meetings||[]).filter(x=>String(x.date||"").slice(0,10)===key).forEach(x=>events.push({type:"meeting",title:x.subject||"Client Meeting",time:x.time||"",meta:[x.mode,x.location].filter(Boolean).join(" • ")}));
+  (state.tasks||[]).filter(x=>String(x.due||x.date||"").slice(0,10)===key && x.status!=="Completed").forEach(x=>events.push({type:"task",title:x.title||"Task",time:"",meta:[x.priority?x.priority+" priority":"",x.status||"Pending"].filter(Boolean).join(" • ")}));
+  return events.sort((a,b)=>String(a.time||"").localeCompare(String(b.time||"")));
+}
+function sameDayCalendarDetails(date){
+  const d=date||new Date().toISOString().slice(0,10);
+  const events=calendarEventsForDate(d);
+  const label=new Date(d+"T00:00:00").toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  return `<div class="panel same-day-calendar"><div class="panel-head"><div><h3>Today's Calendar</h3><span>${label}</span></div><button class="secondary" onclick="navigate('calendar')">Open calendar module</button></div><div class="list">${events.length?events.map(e=>`<div class="list-row"><div class="date-box"><b>${e.type==="hearing"?"⚖":e.type==="meeting"?"☏":"✓"}</b><small>${esc(e.type)}</small></div><div class="list-main"><strong>${esc(e.title)}</strong><small>${esc(e.time||"All day")}${e.meta?" • "+esc(e.meta):""}</small></div>${badge(e.type==="hearing"?"Hearing":e.type==="meeting"?"Meeting":"Task")}</div>`).join(""):`<div class="empty">No hearings, meetings or pending tasks scheduled for today.</div>`}</div></div>`;
+}
+function dashboardCalendar(){
+  const now=new Date();
+  const year=now.getFullYear(), month=now.getMonth();
+  const monthName=now.toLocaleString("en-IN",{month:"long",year:"numeric"});
+  const first=new Date(year,month,1).getDay();
+  const days=new Date(year,month+1,0).getDate();
+  const pad=n=>String(n).padStart(2,"0");
+  const key=d=>`${year}-${pad(month+1)}-${pad(d)}`;
+  const events={};
+  const add=(date,type,title)=>{if(!date)return;(events[String(date).slice(0,10)]||(events[String(date).slice(0,10)]=[])).push({type,title});};
+  (state.hearings||[]).forEach(h=>add(h.date,"hearing",h.title||"Court Hearing"));
+  (state.meetings||[]).forEach(m=>add(m.date,"meeting",m.subject||"Client Meeting"));
+  (state.tasks||[]).filter(t=>t.status!=="Completed").forEach(t=>add(t.due||t.date,"task",t.title||"Task"));
+  let cells="";
+  for(let i=0;i<first;i++) cells+='<div class="dash-cal-day muted-day"></div>';
+  for(let d=1;d<=days;d++){
+    const date=key(d), list=events[date]||[], today=date===`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    cells+=`<button class="dash-cal-day ${today?"today":""} ${list.length?"has-events":""}" title="${esc(list.map(x=>x.title).join(" • "))}" onclick="navigate('calendar')"><span>${d}</span>${list.length?`<i class="dash-cal-dots">${list.slice(0,3).map(x=>`<b class="${x.type}"></b>`).join("")}</i>`:""}</button>`;
+  }
+  return `<div class="panel dashboard-calendar"><div class="panel-head"><div><h3>Calendar</h3><span>${monthName}</span></div><button class="secondary" onclick="navigate('calendar')">Open calendar</button></div><div class="dash-cal-weekdays">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(x=>`<span>${x}</span>`).join("")}</div><div class="dash-cal-grid">${cells}</div><div class="dash-cal-legend"><span><b class="hearing"></b> Hearings</span><span><b class="meeting"></b> Meetings</span><span><b class="task"></b> Tasks</span></div></div>`;
+}
 function dashboard(){
   const today=new Date(); today.setHours(0,0,0,0);
   const upcoming=state.hearings.filter(h=>h.date && new Date(h.date+"T00:00:00")>=today).sort((a,b)=>(String(a.date)+String(a.time||"")).localeCompare(String(b.date)+String(b.time||""))).slice(0,4);
@@ -124,6 +159,7 @@ function dashboard(){
    <div class="panel"><div class="panel-head"><h3>Upcoming Client Meetings</h3><button class="secondary" onclick="navigate('client-management')">View all</button></div>
    <div class="list">${upcomingMeetings.length?upcomingMeetings.map(m=>{const c=meetingClient(m); return `<div class="list-row"><div class="date-box"><b>${new Date(m.date+"T00:00:00").getDate()}</b><small>${new Date(m.date+"T00:00:00").toLocaleString("en",{month:"short"})}</small></div><div class="list-main"><strong>${esc(m.subject||"Client Meeting")}</strong><small>${esc(c?.name||"Client")} • ${esc(m.time||"")} • ${esc(m.mode||"Meeting")}</small>${m.location?`<small>${esc(m.location)}</small>`:""}</div><button class="secondary" onclick="sendMeetingWhatsApp(${state.meetings.indexOf(m)})">WhatsApp</button></div>`;}).join(""):`<div class="empty">No upcoming client meetings.</div>`}</div></div>
   </div>
+  <div class="dashboard-calendar-wrap"><div id="dashboard-calendar-module"></div></div>
   <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Upcoming Tasks</h3><button class="secondary" onclick="navigate('tasks')">View all</button></div>
    <div class="list">${upcomingTasks.length?upcomingTasks.map(t=>`<div class="list-row"><div class="date-box"><b>${new Date(t.due+"T00:00:00").getDate()}</b><small>${new Date(t.due+"T00:00:00").toLocaleString("en",{month:"short"})}</small></div><div class="list-main"><strong>${esc(t.title||"Task")}</strong><small>${esc(t.case||"No case")} • ${esc(t.priority||"Medium")} priority</small><small>Due: ${fmtDate(t.due)} • ${esc(t.status||"Pending")}</small></div></div>`).join(""):`<div class="empty">No upcoming tasks.</div>`}</div></div>
   <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Quick Actions</h3></div><div class="panel-body" style="padding:14px"><div class="quick-grid">
@@ -132,6 +168,7 @@ function dashboard(){
     <button class="quick" onclick="openModal('hearing')"><strong>＋ Hearing</strong><small>Schedule hearing</small></button>
     <button class="quick" onclick="openModal('meeting')"><strong>＋ Client Meeting</strong><small>Schedule and WhatsApp client</small></button>
    </div></div></div>`;
+  if(window.renderCalendarModuleInto){window.renderCalendarModuleInto(document.getElementById("dashboard-calendar-module"));}
 }
 
 function caseClient(){
@@ -152,6 +189,8 @@ function caseDetails(query="", selectedId="") {
   let workspace=`<div class="empty">Search and select a case to open its complete Case 360 workspace.</div>`;
   if(active){const parties=linked(active);const hs=(Array.isArray(state.hearings)?state.hearings:[]).filter(h=>h.case===active.number||h.case===active.id||h.caseNumber===active.number);const ts=(Array.isArray(state.tasks)?state.tasks:[]).filter(t=>t.case===active.number||t.case===active.title||t.caseId===active.id||t.caseNumber===active.number);const ms=(Array.isArray(state.meetings)?state.meetings:[]).filter(m=>parties.some(c=>c.id===m.clientId)||m.case===active.number||m.caseId===active.id);const ds=(Array.isArray(state.discussions)?state.discussions:[]).filter(d=>parties.some(c=>c.id===d.clientId)||d.case===active.number||d.caseId===active.id);const tx=Array.isArray(state.transactions)?state.transactions.filter(t=>t.case===active.number||t.case===active.id||t.caseId===active.id||t.caseNumber===active.number):[];const finance=active.finance||{};const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");const received=tx.filter(t=>String(t.type||t.kind||"").toLowerCase().includes("receipt")||String(t.type||t.kind||"").toLowerCase().includes("payment")).reduce((a,t)=>a+Number(t.amount||0),0)+Number(finance.received||0);const expenses=tx.filter(t=>String(t.type||t.kind||"").toLowerCase().includes("expense")).reduce((a,t)=>a+Number(t.amount||0),0)+Number(finance.expenses||0);const billed=Number(finance.total||finance.fees||0);const balance=Math.max(0,billed-received);window.case360ActiveCaseId=active.id;workspace=`<div class="panel case360-workspace"><div class="panel-head"><div><h2>${esc(active.number)}</h2><span>${esc(active.title||"Untitled case")}</span></div><div>${badge(active.status||"Active")}</div></div><div class="case360-links"><button class="secondary" onclick="navigate('case-client')">Case & Client</button><button class="secondary" onclick="navigate('hearings')">Hearings</button><button class="secondary" onclick="navigate('calendar')">Calendar</button><button class="secondary" onclick="navigate('tasks')">Tasks</button><button class="secondary" onclick="navigate('client-management')">Client Management</button><button class="secondary" onclick="navigate('documents')">Documents</button><button class="secondary" onclick="navigate('finance')">Finance</button></div><div class="panel-body" style="padding:18px"><div class="grid-2"><div>${details("Case Type",active.type)}${details("Category",active.civilCategory||active.criminalCategory)}${details("Court",active.court)}${details("Case Number / Year",active.number)}</div><div>${details("Next Hearing",active.next?fmtDate(active.next):"Not scheduled")}${details("Hearing Time",active.hearingTime)}${details("Status",active.status)}${details("Case ID",active.id)}</div></div><hr><h3>Clients / Parties</h3><div class="case360-parties">${parties.length?parties.map(c=>`<div class="party-card"><strong>${esc(c.name)}</strong><span>${esc(c.role||"Party")}</span><small>☎ ${esc(c.phone||"No phone")}<br>${esc(c.email||"No email")}</small></div>`).join(""):esc(active.client||"No linked clients")}</div><hr><h3>Finance</h3><div class="cards"><div class="stat"><div class="stat-top">Total Fees</div><div class="stat-value">${money(billed)}</div></div><div class="stat"><div class="stat-top">Received</div><div class="stat-value">${money(received)}</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">${money(balance)}</div></div><div class="stat"><div class="stat-top">Expenses</div><div class="stat-value">${money(expenses)}</div></div></div>${tx.length?`<div class="panel"><table><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead><tbody>${tx.map(t=>`<tr><td>${fmtDate(t.date||t.created||"2026-01-01")}</td><td>${esc(t.description||t.note||"Transaction")}</td><td>${esc(t.type||t.kind||"—")}</td><td>${money(t.amount)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No financial transactions recorded for this case.</div>`}<hr><h3>Directly Connected Records</h3><div class="quick-grid"><button class="quick" onclick="openModal('hearing')"><strong>＋ Add Hearing</strong><small>Schedule for this case</small></button><button class="quick" onclick="openModal('task')"><strong>＋ Add Task</strong><small>Create a case task</small></button><button class="quick" onclick="openModal('meeting')"><strong>＋ Add Meeting</strong><small>Schedule client meeting</small></button><button class="quick" onclick="navigate('documents')"><strong>View Documents</strong><small>Open document records</small></button><button class="quick" onclick="navigate('finance')"><strong>View Finance</strong><small>Open financial records</small></button></div><hr><h3>Case Timeline & Related Records</h3><div class="case360-columns"><section><h4>Hearings (${hs.length})</h4>${hs.length?hs.map(h=>`<div class="list-row"><div class="list-main"><strong>${fmtDate(h.date)} ${esc(h.time||"")}</strong><small>${esc(h.court||active.court||"")} • ${esc(h.stage||"Hearing")}</small></div></div>`).join(""):`<div class="empty">No hearings</div>`}</section><section><h4>Tasks (${ts.length})</h4>${ts.length?ts.map(t=>`<div class="list-row"><div class="list-main"><strong>${esc(t.title)}</strong><small>Due ${fmtDate(t.due)} • ${esc(t.status||"Pending")}</small></div></div>`).join(""):`<div class="empty">No tasks</div>`}</section><section><h4>Meetings & Discussions (${ms.length+ds.length})</h4>${[...ms.map(m=>`<div class="list-row"><div class="list-main"><strong>Meeting: ${esc(m.subject||"Client Meeting")}</strong><small>${fmtDate(m.date)} • ${esc(m.time||"")}</small></div></div>`),...ds.map(d=>`<div class="list-row"><div class="list-main"><strong>Discussion: ${esc(d.subject||"Client Discussion")}</strong><small>${fmtDate(d.date)}</small></div></div>`)].join("")||`<div class="empty">No communication records</div>`}</section></div></div></div>`;}
   content.innerHTML=layout("Case 360 / Case Details","Search once and manage every record connected to the selected case in one workspace")+`<div class="panel"><div class="panel-body" style="padding:16px"><div class="toolbar" style="margin:0"><input class="filter" id="caseDetailsSearch" value="${esc(query)}" placeholder="Search case number, client name or phone number..." oninput="caseDetailsSearch(this.value)"><button class="primary" onclick="caseDetailsSearch(document.getElementById('caseDetailsSearch').value)">Search</button></div></div></div><div class="case360-layout"><div><h3>Matching Cases (${matches.length})</h3>${matches.map(caseCard).join("")||`<div class="empty">No matching cases.</div>`}</div><div>${workspace}</div></div>`;
+  if(window.renderCalendarModuleInto){window.renderCalendarModuleInto(document.getElementById("dashboard-calendar-module"));}
+
 }
 function caseDetailsSearch(value){caseDetails(value);}
 
@@ -260,8 +299,15 @@ function sendMeetingWhatsApp(index){
  if(!url){alert(`No valid WhatsApp/mobile number is available for ${client.name}. Please update the client record.`);return;}
  window.open(url,"_blank","noopener,noreferrer");
 }
+function calendarModuleMarkup(date, showBack=true){
+  const day=String(date||new Date().toISOString().slice(0,10)).slice(0,10);
+  const label=new Date(day+"T00:00:00").toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const events=calendarEventsForDate(day);
+  return `<div class="panel same-day-calendar calendar-module-panel"><div class="panel-head"><div><h3>Today's Calendar</h3><span>${label}</span></div>${showBack?`<button class="secondary" onclick="navigate('dashboard')">Back to dashboard</button>`:""}</div><div class="list">${events.length?events.map(e=>`<div class="list-row"><div class="date-box"><b>${e.type==="hearing"?"⚖":e.type==="meeting"?"☏":"✓"}</b><small>${esc(e.type)}</small></div><div class="list-main"><strong>${esc(e.title)}</strong><small>${esc(e.time||"All day")}${e.meta?" • "+esc(e.meta):""}</small></div>${badge(e.type==="hearing"?"Hearing":e.type==="meeting"?"Meeting":"Task")}</div>`).join(""):`<div class="empty">No hearings, meetings or pending tasks scheduled for today.</div>`}</div></div>`;
+}
 function calendar(){
- content.innerHTML=layout("Calendar","Court hearings, appointments and deadlines")+`<div class="panel"><div class="panel-head"><h3>September 2026</h3><span>Monthly view</span></div><div class="list">${state.hearings.map(h=>`<div class="list-row"><div class="date-box"><b>${new Date(h.date+"T00:00:00").getDate()}</b><small>SEP</small></div><div class="list-main"><strong>${h.title}</strong><small>${h.time} • ${h.court} • ${h.case}</small></div><div>${badge(h.stage)}</div></div>`).join("")}</div></div>`;
+  const today=new Date().toISOString().slice(0,10);
+  content.innerHTML=layout("Calendar","Court hearings, appointments and deadlines")+calendarModuleMarkup(today,true);
 }
 function documents(){
  content.innerHTML=layout("Documents","Digital case files and document workspace",`openModal('document')`)+
