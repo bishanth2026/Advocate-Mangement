@@ -1,0 +1,60 @@
+/* Mobile-only layout stabilization. Desktop styles and app functions remain unchanged. */
+@media (max-width:720px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  #app,.main,.content{min-width:0;max-width:100%;width:100%}
+  .content{padding:16px 14px 28px}
+  .topbar{height:auto;min-height:68px;gap:10px;flex-wrap:nowrap;padding:12px 14px}
+  .mobile-menu{flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:#eef4fb;color:#172554;display:grid;place-items:center;font-size:25px;line-height:1}
+  .search{flex:1 1 auto;min-width:0;width:auto;height:44px}
+  .search input{min-width:0;font-size:14px}
+  .top-actions{flex:0 0 auto;min-width:0}
+  .icon-btn{display:none}
+  .user-chip{max-width:44px;overflow:hidden;white-space:nowrap;padding:10px}
+  .page-title{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+  .page-title h1{font-size:24px;line-height:1.2;overflow-wrap:anywhere}
+  .page-title p{font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+  .page-title .primary{width:100%;min-height:48px;font-size:16px}
+  .toolbar{display:grid;grid-template-columns:1fr;gap:10px;width:100%}
+  .toolbar>*{width:100%;min-width:0}
+  .panel{width:100%;max-width:100%;min-width:0;overflow:hidden}
+  .panel-head{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;padding:15px}
+  .panel-head>div{min-width:0;flex:1 1 180px}
+  .panel-head h3,.panel-head span{overflow-wrap:anywhere}
+  .panel-head button{max-width:100%;white-space:normal}
+  .form-grid{grid-template-columns:1fr!important;gap:12px}
+  .field,.field.full{grid-column:auto!important;min-width:0}
+  .field label{font-size:12px}
+  .field input,.field select,.field textarea{min-height:44px;font-size:16px;max-width:100%}
+  .form-actions{display:grid;grid-template-columns:1fr;gap:10px}
+  .form-actions button{width:100%;min-height:44px}
+  .cards{grid-template-columns:1fr!important;gap:12px}
+  .stat{min-height:130px}
+  .grid-2{grid-template-columns:1fr!important;gap:14px}
+  .quick-grid{grid-template-columns:1fr!important}
+  .quick{min-height:90px}
+  .list-row{align-items:flex-start;gap:10px;padding:12px}
+  .list-main{min-width:0;overflow-wrap:anywhere}
+  .list-main strong,.list-main small{overflow-wrap:anywhere;white-space:normal}
+  .badge{max-width:100%;white-space:normal;text-align:center}
+  table{min-width:0!important;width:100%!important;table-layout:fixed!important}
+  th,td{padding:10px 8px;font-size:12px;overflow-wrap:anywhere;word-break:normal}
+  .table-wrap,.table-container,.panel-body{max-width:100%;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .modal{padding:10px}
+  .modal-card{width:100%;max-width:100%;max-height:92vh;overflow-y:auto;padding:16px;border-radius:14px}
+  .modal-head h3{font-size:17px;overflow-wrap:anywhere}
+  .same-day-calendar,.dashboard-calendar{width:100%;max-width:100%;min-width:0}
+  .dash-cal-weekdays,.dash-cal-grid{max-width:100%}
+  .dash-cal-day{min-width:0}
+  .report-view,.report-container{max-width:100%;min-width:0;overflow-x:auto}
+  .invoice-actions,.case-actions,.action-buttons{display:flex;flex-wrap:wrap;gap:8px}
+  .invoice-actions button,.case-actions button,.action-buttons button{min-height:42px;max-width:100%}
+}
+@media (max-width:430px){
+  .content{padding:14px 12px 24px}
+  .topbar{padding:10px 12px;gap:8px}
+  .mobile-menu{flex-basis:42px;width:42px;height:42px}
+  .page-title h1{font-size:22px}
+  .panel-head{padding:13px}
+  th,td{padding:9px 7px;font-size:11px}
+  .field input,.field select,.field textarea{font-size:16px}
+}
