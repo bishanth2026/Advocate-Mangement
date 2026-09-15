@@ -1,0 +1,62 @@
+/* Case & Client — mobile readability fix only. */
+@media (max-width:720px){
+  /* Keep the Case & Client table inside the phone viewport. */
+  #caseClientTable,
+  #caseClientTable tbody,
+  #caseClientTable tr,
+  #caseClientTable td{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important}
+  #caseClientTable{table-layout:auto!important;border-collapse:separate!important;border-spacing:0!important;background:transparent!important}
+  #caseClientTable thead{display:none!important}
+  #caseClientTable tbody tr{
+    margin:0 0 14px!important;
+    padding:14px!important;
+    background:#fff!important;
+    border:1px solid #dce4f0!important;
+    border-radius:14px!important;
+    box-shadow:0 8px 22px rgba(30,58,138,.08)!important;
+    overflow:hidden!important;
+  }
+  #caseClientTable tbody td{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:14px!important;
+    padding:10px 0!important;
+    border-bottom:1px dashed #e3e8f1!important;
+    text-align:right!important;
+    font-size:14px!important;
+    line-height:1.45!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  #caseClientTable tbody td:last-child{border-bottom:0!important;padding-bottom:0!important}
+  #caseClientTable tbody td:first-child{padding-top:0!important}
+  #caseClientTable tbody td::before{
+    flex:0 0 38%!important;
+    max-width:38%!important;
+    color:#667085!important;
+    font-size:11px!important;
+    font-weight:700!important;
+    letter-spacing:.02em!important;
+    text-align:left!important;
+    text-transform:uppercase!important;
+  }
+  #caseClientTable tbody td:nth-child(1)::before{content:'Case number'}
+  #caseClientTable tbody td:nth-child(2)::before{content:'Case title'}
+  #caseClientTable tbody td:nth-child(3)::before{content:'Client / party'}
+  #caseClientTable tbody td:nth-child(4)::before{content:'Court'}
+  #caseClientTable tbody td:nth-child(5)::before{content:'Next hearing'}
+  #caseClientTable tbody td:nth-child(6)::before{content:'Status'}
+  #caseClientTable tbody td:nth-child(7)::before{content:'Actions'}
+  #caseClientTable .case-link{display:block!important;max-width:62%!important;font-size:16px!important;font-weight:750!important;line-height:1.35!important;overflow-wrap:anywhere!important;word-break:normal!important}
+  #caseClientTable .badge{white-space:normal!important;text-align:center!important}
+  #caseClientTable button{max-width:100%!important;white-space:normal!important}
+  /* If a responsive wrapper exists, do not create a second horizontal scroll. */
+  .case-client-page .panel,.case-client-page .panel-body{overflow:visible!important}
+}
+@media (max-width:430px){
+  #caseClientTable tbody tr{padding:12px!important;border-radius:12px!important}
+  #caseClientTable tbody td{font-size:13px!important;gap:10px!important}
+  #caseClientTable tbody td::before{font-size:10px!important;flex-basis:40%!important;max-width:40%!important}
+  #caseClientTable .case-link{font-size:15px!important;max-width:60%!important}
+}
