@@ -1,0 +1,4 @@
+/* Task module only: searchable client/party field */
+.client-party-typeahead{width:100%;min-width:0;box-sizing:border-box;padding:12px 14px;border:1px solid #d9e2f1;border-radius:12px;background:#fff;color:#172554;font:inherit;line-height:1.4;}
+.client-party-typeahead:focus{outline:2px solid rgba(37,99,235,.22);border-color:#2563eb;}
+@media(max-width:720px){.client-party-typeahead{font-size:16px;min-height:46px;}}
