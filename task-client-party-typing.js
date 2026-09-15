@@ -32,10 +32,10 @@ function enhance(){
  var caseField=fields.find(function(f){var l=f.querySelector('label');return l&&/^case(\s*number)?$/i.test(l.textContent.trim())});
  if(!caseField)return;
  caseField.style.display='none';
- var cf=makeField(caseField,'Client / Party','taskClientTypeahead','taskClientOptions','Type client / party name...',clients(),'client');
- makeField(cf,'Case Number','taskCaseTypeahead','taskCaseOptions','Type case number or title...',cases(),'case');
+ var cf=makeField(caseField,'Case Number','taskCaseTypeahead','taskCaseOptions','Type case number or title...',cases(),'case');
+ makeField(cf,'Client / Party','taskClientTypeahead','taskClientOptions','Type client / party name...',clients(),'client');
 }
-window.openModal=function(type){var r=oldOpen.apply(this,arguments);if(type==='task')setTimeout(enhance,60);return r};
+window.openModal=function(type){var r=oldOpen.apply(this,arguments);if(type==='task'){chosenClient=null;chosenCase=null;setTimeout(enhance,60)}return r};
 window.addRecord=function(type){
  if(type!=='task')return oldAdd.apply(this,arguments);
  var ci=document.getElementById('taskClientTypeahead'),ca=document.getElementById('taskCaseTypeahead');
