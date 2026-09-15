@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#111827">
 <title>AdvocateDesk — Practice Management</title>
 <link rel="stylesheet" href="styles.css?v=20260913-11">
+<link rel="stylesheet" href="mobile-layout-fix.css?v=20260915-1">
 </head>
 <body>
 <div id="app">
@@ -54,7 +55,6 @@
 <script>
 (function(){function ensure(){var t=document.getElementById("dashboard-calendar-module");if(t&&window.renderDashboardTodayCalendarInto){window.renderDashboardTodayCalendarInto(t);}}setTimeout(ensure,0);setTimeout(ensure,100);setTimeout(ensure,500);document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-page=\"dashboard\"]");if(b){setTimeout(ensure,20);setTimeout(ensure,150);}},true);})();
 </script>
-
 <script>
 (function(){
   function toggleMenu(){
