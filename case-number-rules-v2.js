@@ -50,27 +50,8 @@
 
   const originalSave = window.casesFixSave;
   window.casesFixSave = function (type, index) {
-    if (typeof originalSave !== 'function') return;
-
-    const caseType = document.getElementById('partyCase');
-    const number = document.getElementById('partyNumber');
-    const prefix = document.getElementById('partyPrefix');
-    const selectedType = caseType ? caseType.value : '';
-    const selectedPrefix = prefix ? prefix.value : '';
-
-    if (number && PREFIXES[selectedType] && selectedPrefix) {
-      const originalValue = number.value;
-      number.value = selectedPrefix + ' ' + cleanNumber(originalValue);
-      try {
-        return originalSave(type, index);
-      } finally {
-        number.value = originalValue;
-      }
-    }
-
-    return originalSave(type, index);
+    if (typeof originalSave === 'function') return originalSave(type, index);
   };
-
   document.addEventListener('change', function (event) {
     if (event.target && event.target.id === 'partyCase') renderCaseNumber();
   });

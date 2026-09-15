@@ -8,10 +8,10 @@ const seed = {
     {id:"CS-2026-004",number:"OP 71/2025",title:"Shameer v. Amina",client:"Shameer K.",court:"Family Court",next:"2026-09-18",status:"Reserved",type:"Family"}
   ],
   clients:[
-    {id:"CL-001",name:"Abdul Rahman",phone:"9876543210",email:"rahman@example.com",cases:2,status:"Active"},
-    {id:"CL-002",name:"Fathima P.",phone:"9895001122",email:"fathima@example.com",cases:1,status:"Active"},
-    {id:"CL-003",name:"ABC Traders",phone:"9847002211",email:"office@abctraders.example",cases:1,status:"Active"},
-    {id:"CL-004",name:"Shameer K.",phone:"9961007788",email:"shameer@example.com",cases:1,status:"Active"}
+    {id:"CL-001",name:"Abdul Rahman",phone:"9876543210",email:"rahman@example.com",role:"Petitioner",cases:2,status:"Active"},
+    {id:"CL-002",name:"Fathima P.",phone:"9895001122",email:"fathima@example.com",role:"Respondent",cases:1,status:"Active"},
+    {id:"CL-003",name:"ABC Traders",phone:"9847002211",email:"office@abctraders.example",role:"Petitioner",cases:1,status:"Active"},
+    {id:"CL-004",name:"Shameer K.",phone:"9961007788",email:"shameer@example.com",role:"Victim",cases:1,status:"Active"}
   ],
   hearings:[
     {date:"2026-09-08",time:"10:30 AM",case:"OS 145/2026",title:"Rahman v. State",court:"District Court, Kozhikode",stage:"Evidence"},
@@ -29,8 +29,69 @@ const state = JSON.parse(localStorage.getItem("advocateDeskData") || "null") || 
 // Backward-compatible collections for the Client Management workspace.
 state.discussions = Array.isArray(state.discussions) ? state.discussions : [];
 state.meetings = Array.isArray(state.meetings) ? state.meetings : [];
+state.payments = Array.isArray(state.payments) ? state.payments : [];
+state.invoices = Array.isArray(state.invoices) ? state.invoices : [
+  {id:"INV-101",date:"2026-09-13",client:"ABC Industries",case:"C-1001",amount:1000,paid:500,status:"Paid"},
+  {id:"INV-001",date:"2026-09-13",client:"ABC Industries",case:"C-1001",amount:25000,paid:15000,status:"Partial"}
+];
 const save=()=>localStorage.setItem("advocateDeskData",JSON.stringify(state));
 const fmtDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+const KOZHIKODE_COURTS = [
+  "JFCM Court, Kunnamangalam",
+  "District Court / Rent Control Appellate Authority, Kozhikode",
+  "Sub Court Kozhikode",
+  "Munsiff Court 1 Kozhikode",
+  "Munsiff Court 2 Kozhikode",
+  "JFCM 1 Kozhikode",
+  "JFCM 2 Kozhikode",
+  "JFCM 3 Kozhikode",
+  "JFCM 5 Kozhikode",
+  "Chief Judicial Magistrate Court, Kozhikode",
+  "MACT Kozhikode",
+  "JFCM IV Kozhikode",
+  "Additional District and Sessions Court-III, Kozhikode",
+  "Additional District Court, POCSO, Kozhikode",
+  "JFCM 7, NI ACT Cases, Kozhikode",
+  "Special Fast Track Court, Kozhikode",
+  "Commercial Court Kozhikode",
+  "Judicial First Class Magistrate 8 Kozhikode",
+  "Judicial First Class Magistrate 9 Kozhikode",
+  "Judicial First Class Magistrate 10 Kozhikode",
+  "Judicial First Class Magistrate 11 Kozhikode",
+  "Family Court Vatakara",
+  "Munsiff Court,Koyilandy",
+  "Sub Court,Koyilandy",
+  "Judicial First Class Magistrate Court, Koyilandy",
+  "Special Fast Track Court, Koyilandy",
+  "Commercial Court, Koyilandy",
+  "Family Court,Kozhikode",
+  "Munsiff-Magistrate Court, Perambra",
+  "Judicial First Class Magistrate Court-I, Perambra",
+  "Judicial First Class Magistrate Court-II, Perambra",
+  "Munsiff Court, Payyoli",
+  "Judicial First Class Magistrate Court,Payyoli",
+  "Munsiff Court, Nadapuram",
+  "Judicial First Class Magistrate Court, Nadapuram",
+  "Fast Track Special Court, Nadapuram",
+  "JFCM I Thamarassery",
+  "JFCM II Thamarassery",
+  "Munsiff Court, Thamarassery",
+  "JFCM VI Kozhikode, Eranhipalam",
+  "Spl. Addl Sessions Court, Marad Cases, Kozhikode",
+  "Addl. District and Sessions Court, Vatakara",
+  "Judicial First Class Magistrate Court, Vatakara",
+  "MACT Vatakara",
+  "Sub Court, Vatakara",
+  "Munsiff Court, Vadakara",
+  "JFCM II Court, Vatakara",
+  "NDPS Act Cases, Vatakara",
+  "Commercial Court, Vatakara",
+  "Addl. District Court-II Vatakara",
+  "Grama Nyayalaya Kunnummal",
+  "Grama Nyayalaya Koduvally"
+];
+const courtOptions = selected => ['<option value="">Select court</option>', ...KOZHIKODE_COURTS.map(c => `<option value="${esc(c)}" ${c===selected?'selected':''}>${esc(c)}</option>`)].join('');
+
 const badge=s=>`<span class="badge ${s==="Active"||s==="Completed"?"green":s==="High"||s==="Reserved"?"gold":s==="Pending"?"blue":"red"}">${s}</span>`;
 const content=document.getElementById("content");
 document.title=(auth.role==="super_admin"?"Super Admin":"Admin")+" — AdvocateDesk";
@@ -46,6 +107,7 @@ function dashboard(){
   const today=new Date(); today.setHours(0,0,0,0);
   const upcoming=state.hearings.filter(h=>h.date && new Date(h.date+"T00:00:00")>=today).sort((a,b)=>(String(a.date)+String(a.time||"")).localeCompare(String(b.date)+String(b.time||""))).slice(0,4);
   const upcomingMeetings=state.meetings.filter(m=>m.date && new Date(m.date+"T00:00:00")>=today).sort((a,b)=>(String(a.date)+String(a.time||"")).localeCompare(String(b.date)+String(b.time||""))).slice(0,4);
+  const upcomingTasks=state.tasks.filter(t=>t.due && t.status!=="Completed" && new Date(t.due+"T00:00:00")>=today).sort((a,b)=>String(a.due).localeCompare(String(b.due))).slice(0,4);
   const meetingClient=(m)=>state.clients.find(c=>c.id===m.clientId);
   content.innerHTML=layout("Good morning, Advocate","Thursday, 03 September 2026 • Demo Workspace",`openModal('case')`)+
   `<div class="dashboard-hero ${auth.role==="super_admin"?"super-admin-hero":""}" role="img" aria-label="AdvocateDesk ${auth.role==="super_admin"?"Super Admin":"legal practice"} banner"></div>
@@ -62,6 +124,8 @@ function dashboard(){
    <div class="panel"><div class="panel-head"><h3>Upcoming Client Meetings</h3><button class="secondary" onclick="navigate('client-management')">View all</button></div>
    <div class="list">${upcomingMeetings.length?upcomingMeetings.map(m=>{const c=meetingClient(m); return `<div class="list-row"><div class="date-box"><b>${new Date(m.date+"T00:00:00").getDate()}</b><small>${new Date(m.date+"T00:00:00").toLocaleString("en",{month:"short"})}</small></div><div class="list-main"><strong>${esc(m.subject||"Client Meeting")}</strong><small>${esc(c?.name||"Client")} • ${esc(m.time||"")} • ${esc(m.mode||"Meeting")}</small>${m.location?`<small>${esc(m.location)}</small>`:""}</div><button class="secondary" onclick="sendMeetingWhatsApp(${state.meetings.indexOf(m)})">WhatsApp</button></div>`;}).join(""):`<div class="empty">No upcoming client meetings.</div>`}</div></div>
   </div>
+  <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Upcoming Tasks</h3><button class="secondary" onclick="navigate('tasks')">View all</button></div>
+   <div class="list">${upcomingTasks.length?upcomingTasks.map(t=>`<div class="list-row"><div class="date-box"><b>${new Date(t.due+"T00:00:00").getDate()}</b><small>${new Date(t.due+"T00:00:00").toLocaleString("en",{month:"short"})}</small></div><div class="list-main"><strong>${esc(t.title||"Task")}</strong><small>${esc(t.case||"No case")} • ${esc(t.priority||"Medium")} priority</small><small>Due: ${fmtDate(t.due)} • ${esc(t.status||"Pending")}</small></div></div>`).join(""):`<div class="empty">No upcoming tasks.</div>`}</div></div>
   <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Quick Actions</h3></div><div class="panel-body" style="padding:14px"><div class="quick-grid">
     <button class="quick" onclick="openModal('case')"><strong>＋ New Case</strong><small>Create a case file</small></button>
     <button class="quick" onclick="openModal('client')"><strong>＋ New Client</strong><small>Add client details</small></button>
@@ -70,15 +134,29 @@ function dashboard(){
    </div></div></div>`;
 }
 
-function cases(){
- content.innerHTML=layout("Cases","Manage your complete case portfolio",`openModal('case')`)+
- `<div class="toolbar"><input class="filter" id="caseFilter" placeholder="Search case number, title or client..." oninput="filterTable('caseTable',this.value)"><select class="filter"><option>All Statuses</option><option>Active</option><option>Pending</option><option>Reserved</option></select></div>
- <div class="panel"><table id="caseTable"><thead><tr><th>Case</th><th>Client</th><th>Court</th><th>Next Hearing</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.cases.map((c,i)=>`<tr><td><span class="case-link">${c.number}</span><br><span class="muted">${c.title}</span></td><td>${c.client}</td><td>${c.court}</td><td>${fmtDate(c.next)}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('case',${i})">Edit</button></td></tr>`).join("")}</tbody></table></div>`;
+function caseClient(){
+ content.innerHTML=layout("Case & Client","Manage cases, parties and client relationships",`openModal('case')`)+
+ `<div class="toolbar"><input class="filter" id="caseClientFilter" placeholder="Search case number, title, client, phone or court..." oninput="filterTable('caseClientTable',this.value)"></div>
+ <div class="panel"><table id="caseClientTable"><thead><tr><th>Case</th><th>Parties / Clients</th><th>Court</th><th>Next Hearing</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.cases.map((c,i)=>{const linkedIds=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]); const parties=state.clients.filter(x=>linkedIds.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));return `<tr><td><strong>${esc(c.number)}</strong><br><span class="muted">${esc(c.title)}</span></td><td>${parties.length?parties.map(x=>`<div>${esc(x.name)} <span class="muted">(${esc(x.role||'Party')})</span></div>`).join(''):esc(c.client||'—')}</td><td>${esc(c.court||'—')}</td><td>${fmtDate(c.next)}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('case',${i})">Edit</button></td></tr>`}).join('')}</tbody></table></div>
+ <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>All Clients / Parties</h3><button class="primary" onclick="openModal('client')">＋ Add Client</button></div><table id="clientTable"><thead><tr><th>Client</th><th>Role</th><th>Phone</th><th>Email</th><th>Cases</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.clients.map((c,i)=>`<tr><td><strong>${esc(c.name)}</strong><br><span class="muted">${esc(c.id)}</span></td><td>${esc(c.role||'Petitioner')}</td><td>${esc(c.phone||'')}</td><td>${esc(c.email||'')}</td><td>${c.cases||0}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('client',${i})">Edit</button></td></tr>`).join('')}</tbody></table></div>`;
 }
-function clients(){
- content.innerHTML=layout("Clients","Client directory and case relationships",`openModal('client')`)+
- `<div class="toolbar"><input class="filter" placeholder="Search clients..." oninput="filterTable('clientTable',this.value)"></div><div class="panel"><table id="clientTable"><thead><tr><th>Client</th><th>Phone</th><th>Email</th><th>Cases</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.clients.map((c,i)=>`<tr><td><strong>${c.name}</strong><br><span class="muted">${c.id}</span></td><td>${c.phone}</td><td>${c.email}</td><td>${c.cases}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('client',${i})">Edit</button></td></tr>`).join("")}</tbody></table></div>`;
+
+function caseDetails(query="", selectedId="") {
+  const q=String(query||"").trim().toLowerCase();
+  const norm=v=>String(v||"").toLowerCase();
+  const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return state.clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
+  const matches=(Array.isArray(state.cases)?state.cases:[]).filter(c=>!q||[c.number,c.title,c.court,c.type,c.status,c.client,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q))));
+  const active=state.cases.find(c=>c.id===selectedId)||matches[0];
+  const details=(label,val)=>`<div><span class="muted">${label}</span><br><strong>${esc(val||"—")}</strong></div>`;
+  const caseCard=c=>`<button class="case360-result" onclick="caseDetails(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${esc(c.number||"No case number")}</strong><span>${esc(c.title||"Untitled case")}</span><small>${esc(c.court||"No court")} • ${esc(c.client||"No client")}</small></button>`;
+  let workspace=`<div class="empty">Search and select a case to open its complete Case 360 workspace.</div>`;
+  if(active){const parties=linked(active);const hs=(Array.isArray(state.hearings)?state.hearings:[]).filter(h=>h.case===active.number||h.case===active.id||h.caseNumber===active.number);const ts=(Array.isArray(state.tasks)?state.tasks:[]).filter(t=>t.case===active.number||t.case===active.title||t.caseId===active.id||t.caseNumber===active.number);const ms=(Array.isArray(state.meetings)?state.meetings:[]).filter(m=>parties.some(c=>c.id===m.clientId)||m.case===active.number||m.caseId===active.id);const ds=(Array.isArray(state.discussions)?state.discussions:[]).filter(d=>parties.some(c=>c.id===d.clientId)||d.case===active.number||d.caseId===active.id);const tx=Array.isArray(state.transactions)?state.transactions.filter(t=>t.case===active.number||t.case===active.id||t.caseId===active.id||t.caseNumber===active.number):[];const finance=active.finance||{};const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");const received=tx.filter(t=>String(t.type||t.kind||"").toLowerCase().includes("receipt")||String(t.type||t.kind||"").toLowerCase().includes("payment")).reduce((a,t)=>a+Number(t.amount||0),0)+Number(finance.received||0);const expenses=tx.filter(t=>String(t.type||t.kind||"").toLowerCase().includes("expense")).reduce((a,t)=>a+Number(t.amount||0),0)+Number(finance.expenses||0);const billed=Number(finance.total||finance.fees||0);const balance=Math.max(0,billed-received);window.case360ActiveCaseId=active.id;workspace=`<div class="panel case360-workspace"><div class="panel-head"><div><h2>${esc(active.number)}</h2><span>${esc(active.title||"Untitled case")}</span></div><div>${badge(active.status||"Active")}</div></div><div class="case360-links"><button class="secondary" onclick="navigate('case-client')">Case & Client</button><button class="secondary" onclick="navigate('hearings')">Hearings</button><button class="secondary" onclick="navigate('calendar')">Calendar</button><button class="secondary" onclick="navigate('tasks')">Tasks</button><button class="secondary" onclick="navigate('client-management')">Client Management</button><button class="secondary" onclick="navigate('documents')">Documents</button><button class="secondary" onclick="navigate('finance')">Finance</button></div><div class="panel-body" style="padding:18px"><div class="grid-2"><div>${details("Case Type",active.type)}${details("Category",active.civilCategory||active.criminalCategory)}${details("Court",active.court)}${details("Case Number / Year",active.number)}</div><div>${details("Next Hearing",active.next?fmtDate(active.next):"Not scheduled")}${details("Hearing Time",active.hearingTime)}${details("Status",active.status)}${details("Case ID",active.id)}</div></div><hr><h3>Clients / Parties</h3><div class="case360-parties">${parties.length?parties.map(c=>`<div class="party-card"><strong>${esc(c.name)}</strong><span>${esc(c.role||"Party")}</span><small>☎ ${esc(c.phone||"No phone")}<br>${esc(c.email||"No email")}</small></div>`).join(""):esc(active.client||"No linked clients")}</div><hr><h3>Finance</h3><div class="cards"><div class="stat"><div class="stat-top">Total Fees</div><div class="stat-value">${money(billed)}</div></div><div class="stat"><div class="stat-top">Received</div><div class="stat-value">${money(received)}</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">${money(balance)}</div></div><div class="stat"><div class="stat-top">Expenses</div><div class="stat-value">${money(expenses)}</div></div></div>${tx.length?`<div class="panel"><table><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead><tbody>${tx.map(t=>`<tr><td>${fmtDate(t.date||t.created||"2026-01-01")}</td><td>${esc(t.description||t.note||"Transaction")}</td><td>${esc(t.type||t.kind||"—")}</td><td>${money(t.amount)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No financial transactions recorded for this case.</div>`}<hr><h3>Directly Connected Records</h3><div class="quick-grid"><button class="quick" onclick="openModal('hearing')"><strong>＋ Add Hearing</strong><small>Schedule for this case</small></button><button class="quick" onclick="openModal('task')"><strong>＋ Add Task</strong><small>Create a case task</small></button><button class="quick" onclick="openModal('meeting')"><strong>＋ Add Meeting</strong><small>Schedule client meeting</small></button><button class="quick" onclick="navigate('documents')"><strong>View Documents</strong><small>Open document records</small></button><button class="quick" onclick="navigate('finance')"><strong>View Finance</strong><small>Open financial records</small></button></div><hr><h3>Case Timeline & Related Records</h3><div class="case360-columns"><section><h4>Hearings (${hs.length})</h4>${hs.length?hs.map(h=>`<div class="list-row"><div class="list-main"><strong>${fmtDate(h.date)} ${esc(h.time||"")}</strong><small>${esc(h.court||active.court||"")} • ${esc(h.stage||"Hearing")}</small></div></div>`).join(""):`<div class="empty">No hearings</div>`}</section><section><h4>Tasks (${ts.length})</h4>${ts.length?ts.map(t=>`<div class="list-row"><div class="list-main"><strong>${esc(t.title)}</strong><small>Due ${fmtDate(t.due)} • ${esc(t.status||"Pending")}</small></div></div>`).join(""):`<div class="empty">No tasks</div>`}</section><section><h4>Meetings & Discussions (${ms.length+ds.length})</h4>${[...ms.map(m=>`<div class="list-row"><div class="list-main"><strong>Meeting: ${esc(m.subject||"Client Meeting")}</strong><small>${fmtDate(m.date)} • ${esc(m.time||"")}</small></div></div>`),...ds.map(d=>`<div class="list-row"><div class="list-main"><strong>Discussion: ${esc(d.subject||"Client Discussion")}</strong><small>${fmtDate(d.date)}</small></div></div>`)].join("")||`<div class="empty">No communication records</div>`}</section></div></div></div>`;}
+  content.innerHTML=layout("Case 360 / Case Details","Search once and manage every record connected to the selected case in one workspace")+`<div class="panel"><div class="panel-body" style="padding:16px"><div class="toolbar" style="margin:0"><input class="filter" id="caseDetailsSearch" value="${esc(query)}" placeholder="Search case number, client name or phone number..." oninput="caseDetailsSearch(this.value)"><button class="primary" onclick="caseDetailsSearch(document.getElementById('caseDetailsSearch').value)">Search</button></div></div></div><div class="case360-layout"><div><h3>Matching Cases (${matches.length})</h3>${matches.map(caseCard).join("")||`<div class="empty">No matching cases.</div>`}</div><div>${workspace}</div></div>`;
 }
+function caseDetailsSearch(value){caseDetails(value);}
+
+function cases(){caseClient()}
+function clients(){caseClient()}
 function getHearingClient(h){
   if(h.clientId){ return state.clients.find(c=>c.id===h.clientId) || null; }
   const relatedCase=state.cases.find(c=>c.number===h.case || c.id===h.case);
@@ -90,6 +168,26 @@ function normalizeWhatsApp(phone){
   if(digits.startsWith("00")) digits=digits.slice(2);
   if(digits.length===10 && /^[6-9]/.test(digits)) digits="91"+digits;
   return digits;
+}
+function caseWhatsAppUrl(c,client){
+  if(!client) return null;
+  const number=normalizeWhatsApp(client.phone);
+  if(!number) return null;
+  const message=[
+    `Dear ${client.name},`,
+    ``,
+    `Your case has been added to AdvocateDesk.`,
+    `Case Number: ${c.number||"—"}`,
+    `Case Title: ${c.title||"—"}`,
+    `Case Type: ${c.type||"—"}`,
+    `Court: ${c.court||"—"}`,
+    `Next Hearing Date: ${c.next?fmtDate(c.next):"Not scheduled"}`,
+    `Hearing Time: ${c.hearingTime||"Not scheduled"}`,
+    `Status: ${c.status||"Active"}`,
+    ``,
+    `Please contact the advocate's office for further information.`
+  ].join("\n");
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 function hearingWhatsAppUrl(h){
   const client=getHearingClient(h);
@@ -173,16 +271,129 @@ function tasks(){
  content.innerHTML=layout("Tasks","Work assigned across your practice",`openModal('task')`)+
  `<div class="panel"><table id="taskTable"><thead><tr><th>Task</th><th>Case</th><th>Due</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.tasks.map((t,i)=>`<tr><td><strong>${t.title}</strong></td><td>${t.case}</td><td>${fmtDate(t.due)}</td><td>${badge(t.priority)}</td><td>${badge(t.status)}</td><td><button class="secondary" onclick="openEditModal('task',${i})">Edit</button></td></tr>`).join("")}</tbody></table></div>`;
 }
+window.selectedFinanceClient=window.selectedFinanceClient||"";
+window.filterFinanceClient=function(value){const typed=String(value||"").trim();const clients=[...new Set(state.invoices.map(x=>x.client||"Unknown Client"))];const exact=clients.find(c=>c.toLowerCase()===typed.toLowerCase());window.selectedFinanceClient=exact||typed;finance();};
 function finance(){
- content.innerHTML=layout("Finance","Fees, payments, expenses and client ledgers")+`<div class="cards"><div class="stat"><div class="stat-top">Fees Received</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div><div class="stat"><div class="stat-top">Expenses</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div><div class="stat"><div class="stat-top">Net Income</div><div class="stat-value">₹0</div><div class="stat-foot">Demo data</div></div></div><div class="panel"><div class="empty">Financial transactions will be enabled in the next build phase.</div></div>`;
+ const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
+ const total=state.invoices.reduce((a,x)=>a+Number(x.amount||0),0);
+ const paid=state.invoices.reduce((a,x)=>a+Number(x.paid||0),0);
+ const outstanding=Math.max(0,total-paid);
+ content.innerHTML=layout("Billing & Accounts","Track invoices, client fees and outstanding payments",`openModal('invoice')`)+`<div style="margin:12px 0"><button class="secondary" onclick="openModal('payment')">＋ Record Payment</button></div>`+
+ `<div class="cards"><div class="stat"><div class="stat-top">Total Invoiced</div><div class="stat-value">${money(total)}</div><div class="stat-foot">All invoices</div></div><div class="stat"><div class="stat-top">Collected</div><div class="stat-value">${money(paid)}</div><div class="stat-foot">Payments received</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">${money(outstanding)}</div><div class="stat-foot">Receivables</div></div></div>
+ <div class="panel"><table><thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Paid</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.invoices.map((x,i)=>`<tr><td><strong>${esc(x.id)}</strong><br><small>${fmtDate(x.date)}</small></td><td>${esc(x.client)}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${badge(x.status)}</td><td><div class="table-actions"><button class="secondary" onclick="printInvoice(${i})">Print</button><button class="secondary" onclick="saveInvoice(${i})">Save</button><button class="secondary" onclick="sendInvoiceWhatsApp(${i})">WhatsApp</button></div></td></tr>`).join("")}</tbody></table></div><div class="panel" style="margin-top:18px"><div class="panel-head"><h3>Client-wise Payment Record</h3><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span>Invoice-wise and date-wise payment details</span><input list="finance-client-options" value="${esc(window.selectedFinanceClient||"")}" placeholder="Type client name..." aria-label="Select client by typing" style="min-width:220px" onchange="filterFinanceClient(this.value)" onkeydown="if(event.key==="Enter"){event.preventDefault();filterFinanceClient(this.value)}"><datalist id="finance-client-options"><option value="">All Clients</option>${[...new Set(state.invoices.map(x=>x.client||"Unknown Client"))].sort((a,b)=>String(a).localeCompare(String(b))).map(client=>`<option value="${esc(client)}"></option>`).join("")}</datalist></div></div><table><thead><tr><th>Client / Invoice</th><th>Invoice Date</th><th>Total Amount</th><th>Paid Amount</th><th>Outstanding</th><th>Status</th></tr></thead><tbody>${(()=>{const grouped={};state.invoices.filter(x=>!window.selectedFinanceClient||(x.client||"Unknown Client")===window.selectedFinanceClient).slice().sort((a,b)=>String(a.client||"").localeCompare(String(b.client||""))||String(a.date||"").localeCompare(String(b.date||""))).forEach(x=>{const k=x.client||"Unknown Client";(grouped[k]||(grouped[k]=[])).push(x);});let out="";Object.keys(grouped).forEach(client=>{const rows=grouped[client];const total=rows.reduce((s,x)=>s+Number(x.amount||0),0);const paid=rows.reduce((s,x)=>s+Number(x.paid||0),0);const outstanding=rows.reduce((s,x)=>s+Math.max(0,Number(x.amount||0)-Number(x.paid||0)),0);out+=`<tr class="client-group-row"><td colspan="6"><strong>${esc(client)}</strong> <small>(${rows.length} invoice${rows.length===1?"":"s"})</small></td></tr>`;out+=rows.map(x=>`<tr><td style="padding-left:28px"><strong>${esc(x.id||"Invoice")}</strong></td><td>${fmtDate(x.date)}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${money(Math.max(0,Number(x.amount||0)-Number(x.paid||0)))}</td><td>${badge(x.status||"Pending")}</td></tr>`).join("");out+=`<tr class="client-total-row"><td colspan="2" style="padding-left:28px"><strong>Total for ${esc(client)}</strong></td><td><strong>${money(total)}</strong></td><td><strong>${money(paid)}</strong></td><td><strong>${money(outstanding)}</strong></td><td></td></tr>`;});return out||`<tr><td colspan="6"><div class="empty">No client payment records available.</div></td></tr>`})()}</tbody></table></div><div class="panel" style="margin-top:18px"><div class="panel-head"><h3>Client-wise Payment Received</h3><span>Payments grouped by client and date, with current balance</span></div><table><thead><tr><th>Client / Payment Date</th><th>Invoice</th><th>Payment Method</th><th>Amount Received</th><th>Client Balance</th><th>Reference / Notes</th></tr></thead><tbody>${(()=>{const grouped={};state.payments.filter(p=>!window.selectedFinanceClient||(p.client||"Unknown Client")===window.selectedFinanceClient).slice().sort((a,b)=>String(a.client||"").localeCompare(String(b.client||""))||String(a.date||"").localeCompare(String(b.date||""))).forEach(p=>{const k=p.client||"Unknown Client";(grouped[k]||(grouped[k]=[])).push(p);});let out="";Object.keys(grouped).forEach(client=>{const rows=grouped[client];const invoices=state.invoices.filter(i=>(i.client||"Unknown Client")===client);const balance=invoices.reduce((sum,i)=>sum+Math.max(0,Number(i.amount||0)-Number(i.paid||0)),0);const received=rows.reduce((sum,p)=>sum+Number(p.amount||0),0);out+=`<tr class="client-group-row"><td colspan="6"><strong>${esc(client)}</strong> <small>(${rows.length} payment${rows.length===1?"":"s"})</small></td></tr>`;out+=rows.map(p=>`<tr><td style="padding-left:28px">${fmtDate(p.date)}</td><td>${esc(p.invoiceId||"—")}</td><td>${esc(p.method||"—")}</td><td><strong>${money(p.amount)}</strong></td><td>${money(balance)}</td><td>${esc(p.notes||"—")}</td></tr>`).join("");out+=`<tr class="client-total-row"><td colspan="3" style="padding-left:28px"><strong>Total received — ${esc(client)}</strong></td><td><strong>${money(received)}</strong></td><td><strong>${money(balance)} outstanding</strong></td><td></td></tr>`;});return out||`<tr><td colspan="6"><div class="empty">No payments recorded yet.</div></td></tr>`})()}</tbody></table></div>`;
 }
+
+
+function invoiceDetails(invoice){
+  const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
+  const outstanding=Math.max(0,Number(invoice.amount||0)-Number(invoice.paid||0));
+  return `<div class="invoice-sheet">
+    <div class="invoice-brand"><div class="brand-mark">⚖</div><div><h1>ADVOCATE PRO</h1><p>Biznexco Legal Suite</p><small>Legal Practice Management</small></div><div class="invoice-label"><strong>TAX INVOICE</strong><span>${esc(invoice.id||"—")}</span></div></div>
+    <div class="invoice-rule"></div>
+    <div class="invoice-meta"><div><span>Bill To</span><strong>${esc(invoice.client||"—")}</strong><p>Case: ${esc(invoice.case||"—")}</p></div><div><span>Invoice Date</span><strong>${fmtDate(invoice.date)}</strong><p>Status: <b>${esc(invoice.status||"Pending")}</b></p></div></div>
+    <table class="invoice-table"><thead><tr><th>Description</th><th class="amount">Amount</th></tr></thead><tbody>
+      <tr><td>Advocate Fee</td><td class="amount">${money(invoice.advocateFee)}</td></tr>
+      <tr><td>Clerk Fee</td><td class="amount">${money(invoice.clerkFee)}</td></tr>
+      <tr><td>Court Fees</td><td class="amount">${money(invoice.courtFees)}</td></tr>
+      <tr><td>Other Charges</td><td class="amount">${money(invoice.otherCharges)}</td></tr>
+    </tbody></table>
+    <div class="invoice-total"><div><span>Total Invoice Amount</span><strong>${money(invoice.amount)}</strong></div><div><span>Paid Amount</span><strong>${money(invoice.paid)}</strong></div><div class="due"><span>Balance Due</span><strong>${money(outstanding)}</strong></div></div>
+    <div class="invoice-footer"><div><strong>Thank you for your trust.</strong><p>This invoice is issued for professional legal services and related expenses.</p></div><div class="signature"><div></div><span>Authorized Signature</span></div></div>
+    <div class="invoice-note">Generated by Advocate Pro · Biznexco Legal Suite</div>
+  </div>`;
+}
+function invoicePrintHtml(invoice){
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(invoice.id||"Invoice")} - Professional Invoice</title><style>
+  @page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#172033;font-family:Arial,Helvetica,sans-serif}.invoice-sheet{width:100%;max-width:780px;margin:24px auto;background:#fff;padding:38px;border:1px solid #dce3ee;box-shadow:0 8px 30px rgba(20,40,80,.08)}.invoice-brand{display:flex;align-items:center;gap:14px}.brand-mark{width:58px;height:58px;border-radius:12px;background:#172b63;color:#f4cf76;display:flex;align-items:center;justify-content:center;font-size:31px}.invoice-brand h1{margin:0;color:#172b63;font-size:25px;letter-spacing:1px}.invoice-brand p{margin:4px 0;color:#50617d;font-size:14px;font-weight:bold}.invoice-brand small{color:#7b879b}.invoice-label{margin-left:auto;text-align:right;color:#172b63}.invoice-label strong{display:block;font-size:22px;letter-spacing:1px}.invoice-label span{display:block;margin-top:7px;color:#64748b;font-size:13px}.invoice-rule{height:4px;background:linear-gradient(90deg,#172b63,#3f78d8,#f4cf76);margin:26px 0}.invoice-meta{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:28px}.invoice-meta span{display:block;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:#7b879b;margin-bottom:7px}.invoice-meta strong{font-size:17px;color:#172b63}.invoice-meta p{margin:7px 0 0;color:#52627b;font-size:13px}.invoice-table{width:100%;border-collapse:collapse;margin-top:10px}.invoice-table th{background:#172b63;color:white;padding:13px 15px;text-align:left;font-size:13px}.invoice-table td{padding:15px;border-bottom:1px solid #e4eaf2;font-size:14px}.invoice-table tbody tr:nth-child(even){background:#f8faff}.amount{text-align:right}.invoice-total{margin:24px 0 30px 42%;border:1px solid #dbe4f0;border-radius:10px;overflow:hidden}.invoice-total>div{display:flex;justify-content:space-between;gap:20px;padding:12px 16px;border-bottom:1px solid #e5ebf3;font-size:13px}.invoice-total>div:last-child{border-bottom:0}.invoice-total span{color:#64748b}.invoice-total strong{color:#172b63}.invoice-total .due{background:#edf4ff}.invoice-total .due strong{font-size:18px;color:#174ea6}.invoice-footer{display:flex;justify-content:space-between;gap:30px;margin-top:36px;color:#52627b;font-size:12px}.invoice-footer p{margin-top:7px}.signature{text-align:center;min-width:170px;padding-top:20px}.signature div{border-top:1px solid #9aa8bc;margin-bottom:8px}.signature span{font-size:11px}.invoice-note{text-align:center;border-top:1px solid #e2e8f0;margin-top:35px;padding-top:14px;color:#8a96a8;font-size:10px}@media print{body{background:#fff}.invoice-sheet{max-width:none;margin:0;border:0;box-shadow:none;padding:0}.invoice-total{margin-left:42%}}
+  </style></head><body>${invoiceDetails(invoice)}</body></html>`;
+}
+window.printInvoice=function(index){
+  const invoice=state.invoices[index];
+  if(!invoice)return;
+  const popup=window.open("","_blank","width=900,height=800");
+  if(!popup){alert("Please allow pop-ups to print the invoice.");return;}
+  popup.document.write(invoicePrintHtml(invoice));
+  popup.document.close();popup.focus();setTimeout(()=>popup.print(),300);
+};
+window.saveInvoice=function(index){
+  const invoice=state.invoices[index];
+  if(!invoice)return;
+  const blob=new Blob([invoicePrintHtml(invoice)],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download=(invoice.id||"Invoice")+".html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+window.sendInvoiceWhatsApp=function(index){
+  const invoice=state.invoices[index];
+  if(!invoice)return;
+  const client=state.clients.find(c=>c.name===invoice.client||c.id===invoice.clientId);
+  const phone=String(client?.phone||invoice.phone||"").replace(/\D/g,"");
+  if(!phone){alert("This client does not have a valid WhatsApp/mobile number. Please update the client record.");return;}
+  const text=`Invoice ${invoice.id}\nClient: ${invoice.client}\nCase: ${invoice.case||"—"}\nAdvocate Fee: ₹${Number(invoice.advocateFee||0).toLocaleString("en-IN")}\nClerk Fee: ₹${Number(invoice.clerkFee||0).toLocaleString("en-IN")}\nCourt Fees: ₹${Number(invoice.courtFees||0).toLocaleString("en-IN")}\nOther Charges: ₹${Number(invoice.otherCharges||0).toLocaleString("en-IN")}\nTotal: ₹${Number(invoice.amount||0).toLocaleString("en-IN")}\nPaid: ₹${Number(invoice.paid||0).toLocaleString("en-IN")}\nOutstanding: ₹${Math.max(0,Number(invoice.amount||0)-Number(invoice.paid||0)).toLocaleString("en-IN")}`;
+  window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(text),"_blank","noopener,noreferrer");
+};
+
 function reports(){
- content.innerHTML=layout("Reports","Practice performance and operational reports")+`<div class="quick-grid"><button class="quick"><strong>Case Report</strong><small>Active, pending and disposed cases</small></button><button class="quick"><strong>Hearing Report</strong><small>Upcoming and completed hearings</small></button><button class="quick"><strong>Client Report</strong><small>Client-wise case activity</small></button><button class="quick"><strong>Financial Report</strong><small>Fees, expenses and balances</small></button></div>`;
+ document.body.classList.remove('report-mode');
+ content.innerHTML=layout("Reports","Practice performance and operational reports")+`<div class="quick-grid">
+ <button class="quick" onclick="openReport('cases')"><strong>Case Report</strong><small>Active, pending and disposed cases</small></button>
+ <button class="quick" onclick="openReport('hearings')"><strong>Hearing Report</strong><small>Upcoming and completed hearings</small></button>
+ <button class="quick" onclick="openReport('clients')"><strong>Client Report</strong><small>Client-wise case activity</small></button>
+ <button class="quick" onclick="openReport('finance')"><strong>Financial Report</strong><small>Fees, expenses and balances</small></button>
+ <button class="quick" onclick="openReport('case360')"><strong>Case 360° Report</strong><small>Complete connected report for a selected case</small></button>
+ </div>`;
+}
+function reportShell(title,subtitle,body){
+ document.body.classList.add('report-mode');
+ content.innerHTML=`<div class="report-page"><header class="report-header"><div class="report-brand"><div class="report-logo">⚖</div><div><strong>AdvocateDesk</strong><span>Practice Management</span></div></div><div class="report-heading"><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div><div class="report-actions"><button class="secondary" onclick="reports()">← Reports</button><button class="primary" onclick="window.print()">🖨 Print / Save PDF</button></div></header><main class="report-content">${body}</main><footer class="report-footer"><span>AdvocateDesk · Confidential Office Report</span><span>Generated on ${new Date().toLocaleDateString('en-IN')}</span></footer></div>`;
+}
+function openReport(type){
+ const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
+ if(type==='cases'){
+  reportShell('Case Report','Active, pending and disposed cases',`<table><thead><tr><th>Case Number</th><th>Title</th><th>Client</th><th>Court</th><th>Type</th><th>Status</th></tr></thead><tbody>${state.cases.map(c=>`<tr><td><strong>${esc(c.number||'—')}</strong></td><td>${esc(c.title||'—')}</td><td>${esc(c.client||'—')}</td><td>${esc(c.court||'—')}</td><td>${esc(c.type||'—')}</td><td>${badge(c.status||'Pending')}</td></tr>`).join('')}</tbody></table>`);
+ }else if(type==='hearings'){
+  reportShell('Hearing Report','Upcoming and completed hearings',`<table><thead><tr><th>Date</th><th>Time</th><th>Case</th><th>Stage</th><th>Court</th></tr></thead><tbody>${state.hearings.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))).map(h=>`<tr><td>${fmtDate(h.date)}</td><td>${esc(h.time||'—')}</td><td>${esc(h.case||h.title||'—')}</td><td>${esc(h.stage||'—')}</td><td>${esc(h.court||'—')}</td></tr>`).join('')}</tbody></table>`);
+ }else if(type==='clients'){
+  reportShell('Client Report','Client-wise case activity',`<table><thead><tr><th>Client</th><th>Role</th><th>Phone</th><th>Email</th><th>Linked Cases</th><th>Status</th></tr></thead><tbody>${state.clients.map(c=>`<tr><td><strong>${esc(c.name||'—')}</strong></td><td>${esc(c.role||'Party')}</td><td>${esc(c.phone||'—')}</td><td>${esc(c.email||'—')}</td><td>${esc(c.cases||state.cases.filter(x=>x.client===c.name).length||0)}</td><td>${badge(c.status||'Active')}</td></tr>`).join('')}</tbody></table>`);
+ }else if(type==='finance'){
+  const clientNames=[...new Set(state.invoices.map(x=>String(x.client||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const options=clientNames.map(name=>`<option value="${esc(name)}"></option>`).join('');
+  reportShell('Financial Report','Select a client to view invoices, payments and outstanding balances',`<div class="report-filter"><div class="field"><label for="financialClientSearch">Client name</label><input id="financialClientSearch" list="financialClientOptions" placeholder="Type or select client name..." autocomplete="off"><datalist id="financialClientOptions">${options}</datalist></div><button class="primary" onclick="generateFinancialReport(document.getElementById('financialClientSearch').value)">View Client Report</button></div><div id="financialClientReport" class="report-empty"><p>Select a client and click <strong>View Client Report</strong> to generate the financial report.</p></div>`);
+ }else if(type==='case360'){
+  const options=state.cases.map(c=>`<option value="${esc(c.number||c.id)} — ${esc(c.client||c.title||'No client')}"></option>`).join('');
+  reportShell('Case 360° Report','Search and select a case by client name or case number',`<div class="field"><label>Client name / Case number</label><input id="reportCaseSearch" list="reportCaseOptions" placeholder="Type client name or case number..." autocomplete="off"><datalist id="reportCaseOptions">${options}</datalist><small style="display:block;margin-top:6px;color:#667085">Start typing to find the client or case number.</small></div><br><button class="primary" onclick="generateCase360Report(document.getElementById('reportCaseSearch').value)">Generate Case 360° Report</button>`);
+ }
+}
+function generateFinancialReport(clientQuery){
+ const query=String(clientQuery||'').trim().toLowerCase();
+ if(!query){alert('Please type or select a client name.');return;}
+ const invoices=state.invoices.filter(x=>String(x.client||'').trim().toLowerCase()===query);
+ if(!invoices.length){alert('No invoices found for the selected client.');return;}
+ const client=String(invoices[0].client||clientQuery).trim();
+ const money=v=>"₹"+Number(v||0).toLocaleString('en-IN');
+ const outstanding=x=>Math.max(0,Number(x.amount||0)-Number(x.paid||0));
+ const total=invoices.reduce((a,x)=>a+Number(x.amount||0),0);
+ const paid=invoices.reduce((a,x)=>a+Number(x.paid||0),0);
+ const due=Math.max(0,total-paid);
+ const rows=invoices.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(x=>`<tr><td><strong>${esc(x.id||'—')}</strong></td><td>${fmtDate(x.date)}</td><td>${esc(x.case||x.caseNumber||'—')}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${money(outstanding(x))}</td><td>${badge(x.status|| (outstanding(x)?'Pending':'Paid'))}</td></tr>`).join('');
+ const target=document.getElementById('financialClientReport');
+ if(target)target.innerHTML=`<div class="report-selection-summary"><strong>Client:</strong> ${esc(client)} <span>${invoices.length} invoice${invoices.length===1?'':'s'}</span></div><div class="cards"><div class="stat"><div class="stat-top">Total Invoiced</div><div class="stat-value">${money(total)}</div></div><div class="stat"><div class="stat-top">Collected</div><div class="stat-value">${money(paid)}</div></div><div class="stat"><div class="stat-top">Outstanding</div><div class="stat-value">${money(due)}</div></div></div><table><thead><tr><th>Invoice</th><th>Date</th><th>Case</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th colspan="3">${esc(client)} Total</th><th>${money(total)}</th><th>${money(paid)}</th><th>${money(due)}</th><th></th></tr></tfoot></table>`;
+}
+
+function generateCase360Report(id){
+ const query=String(id||'').trim().toLowerCase();
+ const c=state.cases.find(x=>String(x.id||'').toLowerCase()===query||String(x.number||'').toLowerCase()===query||String(x.client||'').toLowerCase()===query||`${x.number||x.id} — ${x.client||x.title||'No client'}`.toLowerCase()===query||String(x.number||'').toLowerCase().includes(query)||String(x.client||'').toLowerCase().includes(query));
+ if(!c){alert('Please type or select a valid client name or case number.');return;}
+ const parties=state.clients.filter(x=>x.id===c.clientId||x.name===c.client||(Array.isArray(c.clientIds)&&c.clientIds.includes(x.id)));
+ const match=arr=>arr.filter(x=>x.caseId===c.id||x.caseNumber===c.number||x.case===c.id||x.case===c.number||x.case===c.title);
+ const hearings=match(state.hearings), tasks=match(state.tasks), invoices=state.invoices.filter(x=>x.case===c.id||x.case===c.number||x.case===c.title||x.caseId===c.id||x.caseNumber===c.number);
+ const money=v=>"₹"+Number(v||0).toLocaleString('en-IN');
+ reportShell('Case 360° Report',c.number||'Complete case report',`<h2>${esc(c.number||'Case')} — ${esc(c.title||'Untitled case')}</h2><p><strong>Court:</strong> ${esc(c.court||'—')} &nbsp; <strong>Status:</strong> ${esc(c.status||'—')} &nbsp; <strong>Type:</strong> ${esc(c.type||'—')}</p><h3>Clients / Parties</h3><table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Email</th></tr></thead><tbody>${parties.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.role||'Party')}</td><td>${esc(p.phone||'—')}</td><td>${esc(p.email||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No linked clients.</td></tr>'}</tbody></table><h3>Hearings</h3><table><thead><tr><th>Date</th><th>Time</th><th>Stage</th><th>Court</th></tr></thead><tbody>${hearings.map(h=>`<tr><td>${fmtDate(h.date)}</td><td>${esc(h.time||'—')}</td><td>${esc(h.stage||h.purpose||'Hearing')}</td><td>${esc(h.court||c.court||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No hearings.</td></tr>'}</tbody></table><h3>Tasks</h3><table><thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead><tbody>${tasks.map(t=>`<tr><td>${esc(t.title||'Task')}</td><td>${fmtDate(t.due||t.dueDate)}</td><td>${esc(t.priority||'—')}</td><td>${esc(t.status||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No tasks.</td></tr>'}</tbody></table><h3>Finance</h3><table><thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>${invoices.map(x=>`<tr><td>${esc(x.id||'—')}</td><td>${fmtDate(x.date)}</td><td>${esc(x.client||'—')}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${money(Math.max(0,Number(x.amount||0)-Number(x.paid||0)))}</td></tr>`).join('')||'<tr><td colspan="6">No invoices or payments.</td></tr>'}</tbody></table>`);
 }
 function settings(){
  content.innerHTML=layout("Settings","Workspace, profile and application settings")+`<div class="grid-2"><div class="panel"><div class="panel-head"><h3>Workspace</h3></div><div style="padding:18px"><div class="field"><label>Law Office / Practice Name</label><input value="AdvocateDesk Demo Office"></div><br><div class="field"><label>Default Court</label><input value="District Court, Kozhikode"></div></div></div><div class="panel"><div class="panel-head"><h3>Next Phase</h3></div><div style="padding:18px;font-size:12px;color:#667085;line-height:1.7">Supabase authentication, PostgreSQL records, role permissions, secure document storage and audit logs will be connected after the GitHub frontend is approved.</div></div></div>`;
 }
-const pages={dashboard,cases,clients,"client-management":clientManagement,hearings,calendar,documents,tasks,finance,reports,settings};
+const pages={dashboard,"case-client":caseClient,"case-details":caseDetails,cases,clients,"client-management":clientManagement,hearings,calendar,documents,tasks,finance,reports,settings};
 if(auth.role==="super_admin") pages["central-control"]=function(){
  content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><button class="primary" onclick="addAdminDemo()">＋ Create Admin</button></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody><tr><td><strong>Demo Law Office</strong></td><td>Advocate Admin</td><td>${badge("Active")}</td><td>Office management</td></tr></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
 };
@@ -207,29 +418,46 @@ document.getElementById("globalSearch").addEventListener("keydown",e=>{if(e.key=
 
 function filterTable(id,q){q=q.toLowerCase();document.querySelectorAll(`#${id} tbody tr`).forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}
 function openModal(type){
- const titles={case:"Create New Case",client:"Create New Client",hearing:"Schedule Hearing",task:"Create Task",document:"Add Document",discussion:"Add Client Discussion",meeting:"Schedule Client Meeting"};
+ const titles={case:"Create New Case",client:"Create New Client",hearing:"Schedule Hearing",task:"Create Task",document:"Add Document",discussion:"Add Client Discussion",meeting:"Schedule Client Meeting",invoice:"Create Invoice",payment:"Record Client Payment"};
  document.getElementById("modalTitle").textContent=titles[type];
  const forms={
- case:`<div class="form-grid"><div class="field"><label>Case Number</label><input id="f1" placeholder="OS 123/2026"></div><div class="field"><label>Case Title</label><input id="f2" placeholder="Party v. Party"></div><div class="field"><label>Client</label><select id="f3"><option value="">Select a client</option>${state.clients.map(c=>`<option value="${c.id}">${c.name} (${c.id})</option>`).join("")}</select></div><div class="field"><label>Court</label><input id="f4" placeholder="Court name"></div><div class="field"><label>Next Hearing</label><input id="f5" type="date"></div><div class="field"><label>Case Type</label><select id="f6"><option>Civil</option><option>Criminal</option><option>Writ</option><option>Family</option></select></div><div class="field"><label>Status</label><select id="f7"><option>Active</option><option>Pending</option><option>Reserved</option><option>Disposed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('case')">Save Case</button></div>`,
- client:`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1"></div><div class="field"><label>Phone / WhatsApp</label><input id="f2"></div><div class="field"><label>Email</label><input id="f3"></div><div class="field"><label>Status</label><select id="f4"><option>Active</option><option>Inactive</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('client')">Save Client</button></div>`,
+ case:`<div class="form-grid"><div class="field"><label>Case Type</label><select id="f6" onchange="toggleCivilCategory()"><option>Civil</option><option>Criminal</option><option>Writ</option><option>Family</option></select></div><div class="field" id="civilCategoryWrap"><label>Civil Case Category</label><select id="f7"><option value="OS">OS</option><option value="OP">OP</option></select></div><div class="field" id="criminalCategoryWrap" style="display:none"><label>Criminal Case Category</label><select id="f10"><option value="CC">CC</option><option value="CP">CP</option><option value="ST">ST</option><option value="MC">MC</option></select></div><div class="field full"><label>Case Number / Year</label><input id="f11" placeholder="123/2026"></div><div class="field"><label>Clients / Parties</label><select id="f2" multiple size="4" title="Hold Ctrl to select multiple clients"><option value="">Select clients</option>${state.clients.map(c=>`<option value="${c.id}">${c.name} (${c.id}) — ${c.role||"Party"}</option>`).join("")}</select><small class="muted">Select one or more clients/parties.</small></div><div class="field full"><label>Case Title</label><input id="f1" placeholder="Party v. Party"></div><div class="field"><label>Court</label><select id="f3">${courtOptions("")}</select></div><div class="field"><label>Next Hearing Date</label><input id="f4" type="date"></div><div class="field"><label>Hearing Time</label><input id="f5" type="time"></div><div class="field"><label>Status</label><select id="f9"><option>Active</option><option>Pending</option><option>Reserved</option><option>Disposed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('case')">Save &amp; Send WhatsApp</button></div>`,
+ client:`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1" placeholder="Full client name" required></div><div class="field"><label>Client Role</label><select id="fRole"><option>Petitioner</option><option>Respondent</option><option>Victim</option><option>Applicant</option><option>Accused</option><option>Witness</option><option>Other</option></select></div><div class="field"><label>Phone / WhatsApp</label><input id="f2" type="tel" placeholder="Mobile number"></div><div class="field"><label>Email</label><input id="f3" type="email" placeholder="Email address"></div><div class="field"><label>Status</label><select id="f4"><option>Active</option><option>Inactive</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('client')">Save Client</button></div>`,
+
  hearing:`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date"></div><div class="field"><label>Time</label><input id="f2" type="time"></div><div class="field"><label>Case Number</label><select id="f3" onchange="syncHearingCase()"><option value="">Select a case</option>${state.cases.map(c=>`<option value="${c.id}">${c.number} — ${c.client}</option>`).join("")}</select></div><div class="field"><label>Case Title</label><input id="f4" readonly></div><div class="field"><label>Client</label><input id="fClient" readonly placeholder="Selected from case"></div><div class="field full"><label>Court</label><input id="f5" placeholder="Court name"></div><div class="field"><label>Stage</label><input id="f6" placeholder="Evidence / Arguments"></div></div><div class="notice" style="margin-top:14px">When you schedule this hearing, WhatsApp will open with the hearing details prepared for the selected client.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('hearing')">Schedule & WhatsApp</button></div>`,
  task:`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1"></div><div class="field"><label>Case</label><input id="f2"></div><div class="field"><label>Due Date</label><input id="f3" type="date"></div><div class="field"><label>Priority</label><select id="f4"><option>High</option><option>Medium</option><option>Low</option></select></div><div class="field"><label>Status</label><select id="f5"><option>Pending</option><option>In Progress</option><option>Completed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('task')">Save Task</button></div>`,
  discussion:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1">${state.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===window.clientManagementSelectedId?'selected':''}>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Date</label><input id="f2" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field full"><label>Discussion Subject</label><input id="f3" placeholder="e.g. Case strategy discussion"></div><div class="field full"><label>Discussion Details</label><textarea id="f4" placeholder="Record what was discussed, client instructions, documents requested, etc."></textarea></div><div class="field full"><label>Next Action / Follow-up</label><textarea id="f5" placeholder="Next steps or follow-up required"></textarea></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('discussion')">Save Discussion</button></div>`,
- meeting:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1">${state.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===window.clientManagementSelectedId?'selected':''}>${esc(c.name)} — ${esc(c.phone||'No WhatsApp')}</option>`).join("")}</select></div><div class="field"><label>Date</label><input id="f2" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Time</label><input id="f3" type="time" value="10:00"></div><div class="field"><label>Meeting Type / Mode</label><select id="f4"><option>Office Meeting</option><option>Phone Call</option><option>Video Call</option><option>Other</option></select></div><div class="field full"><label>Meeting Subject</label><input id="f5" placeholder="e.g. Case consultation"></div><div class="field"><label>Location / Meeting Link</label><input id="f6" placeholder="Office / Google Meet link"></div><div class="field"><label>Agenda</label><input id="f7" placeholder="Main discussion topic"></div><div class="field full"><label>Meeting Details</label><textarea id="f8" placeholder="Additional instructions or details for the client"></textarea></div></div><div class="notice" style="margin-top:14px">When you save the meeting, WhatsApp will open with the meeting date, time, mode, location, agenda and details pre-filled for the selected client.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('meeting')">Save & WhatsApp</button></div>`,
+ payment:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1" onchange="refreshPaymentInvoices()">${(()=>{const names=[...new Set([...(Array.isArray(state.clients)?state.clients:[]).map(c=>c.name),...(Array.isArray(state.invoices)?state.invoices:[]).map(i=>i.client)])].filter(Boolean).sort((a,b)=>String(a).localeCompare(String(b)));return names.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join("");})()}</select></div><div class="field"><label>Invoice</label><select id="f2"></select></div><div class="field"><label>Payment Date</label><input id="f3" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Payment Amount</label><input id="f4" type="number" min="0" value="0"></div><div class="field"><label>Payment Method</label><select id="f5"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Other</option></select></div><div class="field full"><label>Reference / Notes</label><input id="f6" placeholder="Transaction reference or notes"></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('payment')">Save Payment</button></div>`,
+  invoice:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1">${state.clients.map(c=>`<option>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Case</label><select id="f2">${state.cases.map(c=>`<option value="${esc(c.number)}">${esc(c.number)}</option>`).join("")}</select></div><div class="field"><label>Advocate Fee</label><input id="f3" type="number" min="0" value="0"></div><div class="field"><label>Clerk Fee</label><input id="f4" type="number" min="0" value="0"></div><div class="field"><label>Court Fees</label><input id="f5" type="number" min="0" value="0"></div><div class="field"><label>Other Charges</label><input id="f6" type="number" min="0" value="0"></div><div class="field"><label>Paid Amount</label><input id="f7" type="number" min="0" value="0"></div><div class="field"><label>Invoice Date</label><input id="f8" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Status</label><select id="f9"><option>Pending</option><option>Paid</option><option>Partial</option></select></div></div><div class="notice" style="margin-top:14px">Total invoice amount is calculated automatically from Advocate Fee + Clerk Fee + Court Fees + Other Charges.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('invoice')">Save Record</button></div>`,
+meeting:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1">${state.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===window.clientManagementSelectedId?'selected':''}>${esc(c.name)} — ${esc(c.phone||'No WhatsApp')}</option>`).join("")}</select></div><div class="field"><label>Date</label><input id="f2" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Time</label><input id="f3" type="time" value="10:00"></div><div class="field"><label>Meeting Type / Mode</label><select id="f4"><option>Office Meeting</option><option>Phone Call</option><option>Video Call</option><option>Other</option></select></div><div class="field full"><label>Meeting Subject</label><input id="f5" placeholder="e.g. Case consultation"></div><div class="field"><label>Location / Meeting Link</label><input id="f6" placeholder="Office / Google Meet link"></div><div class="field"><label>Agenda</label><input id="f7" placeholder="Main discussion topic"></div><div class="field full"><label>Meeting Details</label><textarea id="f8" placeholder="Additional instructions or details for the client"></textarea></div></div><div class="notice" style="margin-top:14px">When you save the meeting, WhatsApp will open with the meeting date, time, mode, location, agenda and details pre-filled for the selected client.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('meeting')">Save & WhatsApp</button></div>`,
  document:`<div class="field"><label>Document Name</label><input placeholder="e.g. Petition.pdf"><br><label>Case</label><input placeholder="Case number"><br><label>Category</label><select><option>Petition</option><option>Order</option><option>Evidence</option><option>Other</option></select></div><div class="notice" style="margin-top:14px">File upload will be connected to secure Supabase Storage in the next phase.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Close</button></div>`
  };
  document.getElementById("modalBody").innerHTML=forms[type];document.getElementById("modal").classList.remove("hidden");
+ if(type==="payment") refreshPaymentInvoices();
 }
 
+
+window.refreshPaymentInvoices=function(){
+ const clientEl=document.getElementById("f1"), invoiceEl=document.getElementById("f2");
+ if(!clientEl||!invoiceEl) return;
+ const norm=v=>String(v||"").trim().replace(/\s+/g," ").toLowerCase();
+ const client=norm(clientEl.value);
+ const invoices=(Array.isArray(state.invoices)?state.invoices:[]).filter(i=>norm(i.client)===client && (Number(i.amount||0)-Number(i.paid||0))>0);
+ invoiceEl.innerHTML=invoices.length?invoices.map(i=>{const due=Math.max(0,Number(i.amount||0)-Number(i.paid||0));return `<option value="${esc(i.id)}">${esc(i.id)} — ₹${due.toLocaleString("en-IN")} outstanding</option>`;}).join(""): '<option value="">No outstanding invoices for this client</option>';
+};
 function openEditModal(type,index){
  const item=state[type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':type==='task'?'tasks':type==='discussion'?'discussions':'meetings'][index];
  if(!item) return;
  document.getElementById("modalTitle").textContent=`Edit ${type.charAt(0).toUpperCase()+type.slice(1)}`;
  let form="";
  if(type==='client'){
-  form=`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1" value="${esc(item.name)}"></div><div class="field"><label>Phone / WhatsApp</label><input id="f2" value="${esc(item.phone)}"></div><div class="field"><label>Email</label><input id="f3" value="${esc(item.email)}"></div><div class="field"><label>Status</label><select id="f4"><option ${item.status==='Active'?'selected':''}>Active</option><option ${item.status==='Inactive'?'selected':''}>Inactive</option></select></div></div>`;
+  form=`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1" value="${esc(item.name)}"></div><div class="field"><label>Client Role</label><select id="fRole"><option ${item.role==='Petitioner'?'selected':''}>Petitioner</option><option ${item.role==='Respondent'?'selected':''}>Respondent</option><option ${item.role==='Victim'?'selected':''}>Victim</option></select></div><div class="field"><label>Phone / WhatsApp</label><input id="f2" value="${esc(item.phone)}"></div><div class="field"><label>Email</label><input id="f3" value="${esc(item.email)}"></div><div class="field"><label>Status</label><select id="f4"><option ${item.status==='Active'?'selected':''}>Active</option><option ${item.status==='Inactive'?'selected':''}>Inactive</option></select></div></div>`;
  } else if(type==='case'){
-  form=`<div class="form-grid"><div class="field"><label>Case Number</label><input id="f1" value="${esc(item.number)}"></div><div class="field"><label>Case Title</label><input id="f2" value="${esc(item.title)}"></div><div class="field"><label>Client</label><select id="f3">${state.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===item.clientId?'selected':''}>${esc(c.name)} (${esc(c.id)})</option>`).join("")}</select></div><div class="field"><label>Court</label><input id="f4" value="${esc(item.court)}"></div><div class="field"><label>Next Hearing</label><input id="f5" type="date" value="${esc(item.next)}"></div><div class="field"><label>Case Type</label><select id="f6">${['Civil','Criminal','Writ','Family'].map(x=>`<option ${x===item.type?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="f7">${['Active','Pending','Reserved','Disposed'].map(x=>`<option ${x===item.status?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
+  const linkedIds=Array.isArray(item.clientIds)?item.clientIds:(item.clientId?[item.clientId]:[]);
+  const selectedCategory=item.civilCategory||'';
+  const numberPart=item.caseNumber||String(item.number||'').replace(/^(OS|OP|CC|CP|ST|MC)\s+/,'').split('/')[0];
+  const yearPart=item.caseYear||String(item.number||'').split('/')[1]||'';
+  form=`<div class="form-grid"><div class="field"><label>Case Type</label><select id="f6" onchange="toggleEditCaseCategory()">${['Civil','Criminal','Writ','Family'].map(x=>`<option ${x===item.type?'selected':''}>${x}</option>`).join('')}</select></div><div class="field" id="editCivilCategoryWrap" style="display:${item.type==='Civil'?'':'none'}"><label>Civil Case Category</label><select id="f7">${['OS','OP'].map(x=>`<option ${x===selectedCategory?'selected':''}>${x}</option>`).join('')}</select></div><div class="field" id="editCriminalCategoryWrap" style="display:${item.type==='Criminal'?'':'none'}"><label>Criminal Case Category</label><select id="f10">${['CC','CP','ST','MC'].map(x=>`<option ${x===selectedCategory?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Case Number</label><input id="f11" value="${esc(numberPart+'/'+yearPart)}" placeholder="123/2026"></div><div class="field full"><label>Case Title</label><input id="f1" value="${esc(item.title)}"></div><div class="field"><label>Clients / Parties</label><select id="f2" multiple size="4">${state.clients.map(c=>`<option value="${esc(c.id)}" ${linkedIds.includes(c.id)?'selected':''}>${esc(c.name)} (${esc(c.id)}) — ${esc(c.role||'Party')}</option>`).join('')}</select><small class="muted">Select one or more clients/parties.</small></div><div class="field"><label>Court</label><select id="f3">${courtOptions(item.court)}</select></div><div class="field"><label>Next Hearing</label><input id="f4" type="date" value="${esc(item.next)}"></div><div class="field"><label>Hearing Time</label><input id="f5" type="time" value="${esc(item.hearingTime||'')}"></div><div class="field"><label>Status</label><select id="f9">${['Active','Pending','Reserved','Disposed'].map(x=>`<option ${x===item.status?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
  } else if(type==='hearing'){
   const relatedCase=state.cases.find(c=>c.number===item.case || c.id===item.case || c.id===item.caseId);
   const caseId=relatedCase?relatedCase.id:'';
@@ -251,14 +479,23 @@ function updateRecord(type,index){
  const item=state[key][index];
  if(!item) return;
  if(type==='client'){
-  const oldName=item.name; item.name=document.getElementById('f1').value.trim()||oldName; item.phone=document.getElementById('f2').value.trim()||'—'; item.email=document.getElementById('f3').value.trim()||'—'; item.status=document.getElementById('f4').value;
+  const oldName=item.name; item.name=document.getElementById('f1').value.trim()||oldName; item.role=document.getElementById('fRole').value||'Petitioner'; item.phone=document.getElementById('f2').value.trim()||'—'; item.email=document.getElementById('f3').value.trim()||'—'; item.status=document.getElementById('f4').value;
   state.cases.forEach(c=>{if(c.clientId===item.id || c.client===oldName){c.client=item.name;c.clientId=item.id;}});
  } else if(type==='case'){
-  const oldNumber=item.number, oldClientId=item.clientId;
-  const client=state.clients.find(c=>c.id===document.getElementById('f3').value); if(!client){alert('Please select a client.');return;}
-  item.number=document.getElementById('f1').value.trim()||oldNumber; item.title=document.getElementById('f2').value.trim()||'Untitled'; item.client=client.name; item.clientId=client.id; item.court=document.getElementById('f4').value.trim()||'—'; item.next=document.getElementById('f5').value||item.next; item.type=document.getElementById('f6').value; item.status=document.getElementById('f7').value;
+  const oldNumber=item.number;
+  const selectedClientIds=Array.from(document.getElementById('f2').selectedOptions).map(o=>o.value).filter(Boolean);
+  const selectedClients=state.clients.filter(c=>selectedClientIds.includes(c.id));
+  if(!selectedClients.length){alert('Please select at least one client/party.');return;}
+  const caseType=document.getElementById('f6').value;
+  const category=caseType==='Civil'?document.getElementById('f7')?.value||'':caseType==='Criminal'?document.getElementById('f10')?.value||'':'';
+  const caseNumberYear=document.getElementById('f11').value.trim();
+  const parts=caseNumberYear.split('/');
+  const caseNumber=(parts[0]||'').trim();
+  const caseYear=(parts[1]||'').trim();
+  const newNumber=(category?category+' ':'')+caseNumberYear;
+  item.number=newNumber||oldNumber; item.title=document.getElementById('f1').value.trim()||'Untitled'; item.client=selectedClients.map(c=>c.name).join(', '); item.clients=selectedClients.map(c=>c.name); item.clientIds=selectedClientIds; item.client=selectedClients[0].name; item.clientId=selectedClientIds[0]; item.court=document.getElementById('f3').value.trim()||'—'; item.next=document.getElementById('f4').value||item.next; item.hearingTime=document.getElementById('f5').value||''; item.type=caseType; item.civilCategory=category; item.caseNumber=caseNumber; item.caseYear=caseYear; item.status=document.getElementById('f9').value;
   if(oldNumber!==item.number){state.hearings.forEach(h=>{if(h.case===oldNumber) h.case=item.number;});state.tasks.forEach(t=>{if(t.case===oldNumber)t.case=item.number;});}
-  state.clients.forEach(c=>{c.cases=state.cases.filter(x=>x.clientId===c.id || x.client===c.name).length;});
+  state.clients.forEach(c=>{c.cases=state.cases.filter(x=>(Array.isArray(x.clientIds)?x.clientIds.includes(c.id):x.clientId===c.id)||x.client===c.name||(x.clients||[]).includes(c.name)).length;});
  } else if(type==='hearing'){
   const relatedCase=state.cases.find(c=>c.id===document.getElementById('f3').value); if(!relatedCase){alert('Please select a case.');return;}
   const client=getHearingClient({clientId:relatedCase.clientId,case:relatedCase.number}); if(!client){alert('The selected case is not linked to a client.');return;}
@@ -298,15 +535,19 @@ function syncHearingCase(){
   if(court && !court.value) court.value=relatedCase.court||"";
 }
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
+function toggleEditCaseCategory(){const t=document.getElementById('f6');const w=document.getElementById('editCivilCategoryWrap');const cw=document.getElementById('editCriminalCategoryWrap');if(t&&w)w.style.display=t.value==='Civil'?'':'none';if(t&&cw)cw.style.display=t.value==='Criminal'?'':'none';}
+function toggleCivilCategory(){const t=document.getElementById("f6");const w=document.getElementById("civilCategoryWrap");const cw=document.getElementById("criminalCategoryWrap");if(t&&w)w.style.display=t.value==="Civil"?"":"none";if(t&&cw)cw.style.display=t.value==="Criminal"?"":"none";}
 function addRecord(type){
  if(type==="case"){
-  const selectedClientId=document.getElementById("f3").value;
-  const selectedClient=state.clients.find(c=>c.id===selectedClientId);
-  if(!selectedClient){alert("Please select a client.");return}
-  selectedClient.cases=(Number(selectedClient.cases)||0)+1;
-  state.cases.unshift({id:"CS-"+Date.now(),number:document.getElementById("f1").value||"New Case",title:document.getElementById("f2").value||"Untitled",client:selectedClient.name,clientId:selectedClient.id,court:document.getElementById("f4").value||"—",next:document.getElementById("f5").value||"2026-09-30",status:document.getElementById("f7")?.value||"Active",type:document.getElementById("f6").value})
+  const selectedClientIds=Array.from(document.getElementById("f2").selectedOptions).map(o=>o.value).filter(Boolean);
+  const selectedClients=state.clients.filter(c=>selectedClientIds.includes(c.id));
+  if(!selectedClients.length){alert("Please select at least one client/party.");return}
+  selectedClients.forEach(c=>c.cases=(Number(c.cases)||0)+1);
+  const caseType=document.getElementById("f6").value; const category=caseType==="Civil"?document.getElementById("f7")?.value||"":caseType==="Criminal"?document.getElementById("f10")?.value||"":""; const caseNumberYear=document.getElementById("f11").value.trim(); const caseParts=caseNumberYear.split("/"); const caseNumber=(caseParts[0]||"").trim(); const caseYear=(caseParts[1]||"").trim(); const formattedNumber=(category?category+" ":"")+caseNumberYear; const newCase={id:"CS-"+Date.now(),number:formattedNumber||"New Case",title:document.getElementById("f1").value||"Untitled",client:selectedClients.map(c=>c.name).join(", "),clients:selectedClients.map(c=>c.name),clientIds:selectedClientIds,client:selectedClients[0].name,clientId:selectedClientIds[0],court:document.getElementById("f3").value||"—",next:document.getElementById("f4").value||"2026-09-30",hearingTime:document.getElementById("f5").value||"",status:document.getElementById("f9")?.value||"Active",type:caseType,civilCategory:category,caseNumber,caseYear}; state.cases.unshift(newCase); if(newCase.next){state.hearings=Array.isArray(state.hearings)?state.hearings:[]; state.hearings.push({id:"HEAR-"+Date.now(),date:newCase.next,time:newCase.hearingTime||"Time not set",case:newCase.number,title:newCase.title,court:newCase.court,stage:"Hearing",clientId:newCase.clientId,clientIds:newCase.clientIds,clients:newCase.clients});} save(); closeModal(); navigate("cases"); const url=caseWhatsAppUrl(newCase,selectedClients[0]); if(url){window.open(url,"_blank","noopener,noreferrer");} else {alert(`Case saved, but ${selectedClients[0].name} does not have a valid WhatsApp/mobile number. Please update the client record.`);} return;
 }
- if(type==="client"){state.clients.unshift({id:"CL-"+String(Date.now()).slice(-5),name:document.getElementById("f1").value||"New Client",phone:document.getElementById("f2").value||"—",email:document.getElementById("f3").value||"—",cases:0,status:document.getElementById("f4").value})}
+ if(type==="payment"){ const invoice=state.invoices.find(i=>i.id===document.getElementById("f2").value); const amount=Number(document.getElementById("f4").value||0); if(!invoice||amount<=0){alert("Please select an invoice and enter a valid payment amount.");return;} const remaining=Math.max(0,Number(invoice.amount||0)-Number(invoice.paid||0)); if(amount>remaining){alert("Payment cannot exceed the outstanding balance of this invoice.");return;} state.payments.unshift({id:"PAY-"+String(Date.now()).slice(-5),client:document.getElementById("f1").value,invoiceId:invoice.id,date:document.getElementById("f3").value||new Date().toISOString().slice(0,10),amount,method:document.getElementById("f5").value,notes:document.getElementById("f6").value||""}); invoice.paid=Number(invoice.paid||0)+amount; invoice.status=invoice.paid>=Number(invoice.amount||0)?"Paid":"Partial"; save(); closeModal(); navigate("finance"); return; }
+if(type==="invoice"){ const advocateFee=Number(document.getElementById("f3").value||0); const clerkFee=Number(document.getElementById("f4").value||0); const courtFees=Number(document.getElementById("f5").value||0); const otherCharges=Number(document.getElementById("f6").value||0); const amount=advocateFee+clerkFee+courtFees+otherCharges; const paidAmount=Number(document.getElementById("f7").value||0); state.invoices.unshift({id:"INV-"+String(Date.now()).slice(-5),date:document.getElementById("f8").value||new Date().toISOString().slice(0,10),client:document.getElementById("f1").value,case:document.getElementById("f2").value,advocateFee,clerkFee,courtFees,otherCharges,amount,paid:paidAmount,status:document.getElementById("f9").value}); save(); closeModal(); navigate("finance"); return; }
+ if(type==="client"){state.clients.unshift({id:"CL-"+String(Date.now()).slice(-5),name:document.getElementById("f1").value||"New Client",phone:document.getElementById("f2").value||"—",email:document.getElementById("f3").value||"—",role:document.getElementById("fRole").value||"Petitioner",cases:0,status:document.getElementById("f4").value})}
  if(type==="hearing"){
   const selectedCaseId=document.getElementById("f3").value;
   const relatedCase=state.cases.find(c=>c.id===selectedCaseId);
@@ -355,3 +596,139 @@ document.addEventListener("click", function(e){
 
 document.querySelector(".profile-mini").addEventListener("click",()=>ADAuth.logout());
 document.querySelector(".user-chip").addEventListener("click",()=>ADAuth.logout());
+(function(){
+  const originalOpenModal=window.openModal;
+  const originalAddRecord=window.addRecord;
+  function activeCase(){return (state.cases||[]).find(c=>c.id===window.case360ActiveCaseId);}
+  function setCaseContext(){
+    const c=activeCase(); if(!c) return;
+    const caseSelect=document.getElementById('f3');
+    if(caseSelect && caseSelect.tagName==='SELECT' && [...caseSelect.options].some(o=>o.value===c.id)){
+      caseSelect.value=c.id;
+      if(typeof syncHearingCase==='function') syncHearingCase();
+    }
+    const taskCase=document.getElementById('f2');
+    if(taskCase && taskCase.tagName==='INPUT') taskCase.value=c.number||c.title||'';
+    const clientId=c.clientId || (Array.isArray(c.clientIds)?c.clientIds[0]:'');
+    if(clientId){
+      const clientSelect=document.getElementById('f1');
+      if(clientSelect && clientSelect.tagName==='SELECT' && [...clientSelect.options].some(o=>o.value===clientId)) clientSelect.value=clientId;
+    }
+  }
+  window.openModal=function(type){
+    originalOpenModal(type);
+    if(['hearing','task','meeting','discussion'].includes(type)) setTimeout(setCaseContext,0);
+  };
+  window.addRecord=function(type){
+    const c=activeCase();
+    if(c && type==='hearing'){
+      const oldPush=state.hearings.push.bind(state.hearings);
+      state.hearings.push=function(item){item.caseId=c.id;item.caseNumber=c.number;return oldPush(item)};
+      try{return originalAddRecord(type)}finally{state.hearings.push=oldPush;}
+    }
+    if(c && type==='task'){
+      const oldUnshift=state.tasks.unshift.bind(state.tasks);
+      state.tasks.unshift=function(item){item.caseId=c.id;item.caseNumber=c.number;return oldUnshift(item)};
+      try{return originalAddRecord(type)}finally{state.tasks.unshift=oldUnshift;}
+    }
+    if(c && type==='meeting'){
+      const oldPush=state.meetings.push.bind(state.meetings);
+      state.meetings.push=function(item){item.caseId=c.id;item.caseNumber=c.number;return oldPush(item)};
+      try{return originalAddRecord(type)}finally{state.meetings.push=oldPush;}
+    }
+    if(c && type==='discussion'){
+      const oldUnshift=state.discussions.unshift.bind(state.discussions);
+      state.discussions.unshift=function(item){item.caseId=c.id;item.caseNumber=c.number;return oldUnshift(item)};
+      try{return originalAddRecord(type)}finally{state.discussions.unshift=oldUnshift;}
+    }
+    return originalAddRecord(type);
+  };
+  const originalCaseDetails=window.caseDetails;
+  window.caseDetails=function(q,id){window.case360ActiveCaseId=id||window.case360ActiveCaseId;return originalCaseDetails(q,id);};
+})();
+
+// Case 360 video-style workspace enhancement
+function caseDetails360Enhanced(query="", selectedId="") {
+  const q=String(query||"").trim().toLowerCase();
+  const norm=v=>String(v??"").toLowerCase();
+  const clients=Array.isArray(state.clients)?state.clients:[];
+  const casesList=Array.isArray(state.cases)?state.cases:[];
+  const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
+  const matches=casesList.filter(c=>!q||[c.number,c.title,c.court,c.type,c.status,c.client,c.cnr,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q))));
+  const active=casesList.find(c=>c.id===selectedId)||matches[0];
+  const escv=v=>esc(v==null?"":String(v));
+  const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
+  const section=(title,action,body,cls="")=>`<section class="c360-section ${cls}"><div class="c360-section-head"><h3>${title}</h3>${action||""}</div>${body}</section>`;
+  const btn=(label,fn)=>`<button class="secondary" onclick="${fn}">${label}</button>`;
+  let workspace=`<div class="panel empty">Search for a case and select it to open the Case 360 workspace.</div>`;
+  if(active){
+    const parties=linked(active);
+    const byCase=(arr)=>arr.filter(x=>x.caseId===active.id||x.caseNumber===active.number||x.case===active.id||x.case===active.number||x.case===active.title);
+    const hearings=byCase(Array.isArray(state.hearings)?state.hearings:[]);
+    const tasks=byCase(Array.isArray(state.tasks)?state.tasks:[]);
+    const meetings=byCase(Array.isArray(state.meetings)?state.meetings:[]).filter(m=>!m.clientId||parties.some(p=>p.id===m.clientId));
+    const discussions=byCase(Array.isArray(state.discussions)?state.discussions:[]).filter(d=>!d.clientId||parties.some(p=>p.id===d.clientId));
+    const transactions=byCase(Array.isArray(state.transactions)?state.transactions:[]);
+    const invoices=(Array.isArray(state.invoices)?state.invoices:[]).filter(inv=>inv.case===active.id||inv.case===active.number||inv.case===active.title||inv.caseNumber===active.number||inv.caseId===active.id);
+    const finance=active.finance||{};
+    const received=transactions.filter(t=>/receipt|payment/i.test(t.type||t.kind||"")).reduce((s,t)=>s+Number(t.amount||0),0)+Number(finance.received||0);
+    const expenses=transactions.filter(t=>/expense/i.test(t.type||t.kind||"")).reduce((s,t)=>s+Number(t.amount||0),0)+Number(finance.expenses||0);
+    const invoiceTotal=invoices.reduce((sum,inv)=>sum+Number(inv.amount||0),0);
+    const invoicePaid=invoices.reduce((sum,inv)=>sum+Number(inv.paid||0),0);
+    const fees=invoiceTotal||Number(finance.total||finance.fees||0);
+    const invoiceReceived=invoicePaid||received;
+    const balance=Math.max(0,fees-invoiceReceived);
+    window.case360ActiveCaseId=active.id;
+    workspace=`<div class="c360-workspace">
+      <div class="c360-hero"><div><div class="c360-kicker">CASE 360 / CASE WORKSPACE</div><h2>${escv(active.number||"Case")}</h2><p>${escv(active.title||"Untitled case")}</p><small>${escv(active.court||"Court not specified")}</small></div><div class="c360-hero-actions">${badge(active.status||"Active")} ${btn("Print",`printCase360()`)} ${btn("Save",`saveCase360()`)}</div></div>
+      <div class="c360-summary"><div><span>Client</span><strong>${escv(parties[0]?.name||active.client||"—")}</strong><small>${escv(parties[0]?.role||"Party")}</small><small>☎ ${escv(parties[0]?.phone||"—")}</small><small>✉ ${escv(parties[0]?.email||"—")}</small></div><div><span>Court</span><strong>${escv(active.court||"—")}</strong></div><div><span>Next Hearing</span><strong>${active.next?fmtDate(active.next):"Not scheduled"}</strong><small>${escv(active.hearingTime||"")}</small></div><div><span>Open Tasks</span><strong>${tasks.filter(t=>!/^completed$/i.test(t.status||"")).length}</strong></div></div>
+      ${section("Case Details","",`<div class="c360-detail-grid"><div><label>Case Number</label><strong>${escv(active.number)}</strong></div><div><label>Case Type</label><strong>${escv(active.type)}</strong></div><div><label>Category</label><strong>${escv(active.civilCategory||active.criminalCategory||"—")}</strong></div><div><label>Status</label><strong>${escv(active.status)}</strong></div><div><label>Next Hearing</label><strong>${active.next?fmtDate(active.next):"—"}</strong></div><div><label>Hearing Time</label><strong>${escv(active.hearingTime||"—")}</strong></div></div>`)}
+      ${section("Hearings",btn("Open Hearings","navigate('hearings')"),hearings.length?`<div class="c360-table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Case / Stage</th><th>Court</th></tr></thead><tbody>${hearings.map(h=>`<tr><td>${fmtDate(h.date)}</td><td>${escv(h.time||"Time not set")}</td><td>${escv(h.stage||h.purpose||"Hearing")}</td><td>${escv(h.court||active.court||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No hearings connected to this case.</div>`)}
+      ${section("Discussion History",btn("Open Discussions","navigate('client-management')"),discussions.length?`<div class="c360-table-wrap"><table><thead><tr><th>Date</th><th>Client</th><th>Subject</th><th>Details</th></tr></thead><tbody>${discussions.map(d=>`<tr><td>${fmtDate(d.date)}</td><td>${escv(d.client||parties[0]?.name||"—")}</td><td><strong>${escv(d.subject||"Discussion")}</strong></td><td>${escv(d.details||d.description||d.note||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No discussion history connected to this case.</div>`)}
+      ${section("Client Meetings",btn("Open Meetings","navigate('client-management')"),meetings.length?`<div class="c360-table-wrap"><table><thead><tr><th>Client</th><th>Date / Time</th><th>Meeting</th><th>Mode</th><th>Details</th></tr></thead><tbody>${meetings.map(m=>`<tr><td>${escv(parties.find(p=>p.id===m.clientId)?.name||m.client||parties[0]?.name||"—")}</td><td>${fmtDate(m.date)}<br>${escv(m.time||"")}</td><td><strong>${escv(m.subject||"Client Meeting")}</strong></td><td>${escv(m.mode||"Office Meeting")}</td><td>${escv(m.details||m.description||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No client meetings connected to this case.</div>`)}
+      ${section("Tasks",btn("Open Tasks","navigate('tasks')"),tasks.length?`<div class="c360-table-wrap"><table><thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead><tbody>${tasks.map(t=>`<tr><td>${escv(t.title||"Task")}</td><td>${fmtDate(t.due||t.dueDate)}</td><td>${escv(t.priority||"Medium")}</td><td>${escv(t.status||"Pending")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No tasks connected to this case.</div>`)}
+      ${section("Finance",btn("Open Finance","navigate('finance')"),`<div class="c360-finance"><div><span>Total Invoiced</span><strong>${money(fees)}</strong></div><div><span>Collected</span><strong>${money(invoiceReceived)}</strong></div><div><span>Outstanding</span><strong>${money(balance)}</strong></div><div><span>Expenses</span><strong>${money(expenses)}</strong></div></div>${invoices.length?`<div class="c360-table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th>Amount</th><th>Paid</th><th>Status</th></tr></thead><tbody>${invoices.map(inv=>`<tr><td><strong>${escv(inv.id||"Invoice")}</strong></td><td>${fmtDate(inv.date)}</td><td>${escv(inv.client||parties[0]?.name||"—")}</td><td>${money(inv.amount)}</td><td>${money(inv.paid)}</td><td>${escv(inv.status||"Pending")}</td></tr>`).join("")}</tbody></table></div>`:transactions.length?`<div class="c360-table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead><tbody>${transactions.map(t=>`<tr><td>${fmtDate(t.date||t.created)}</td><td>${escv(t.description||t.note||"Transaction")}</td><td>${escv(t.type||t.kind||"—")}</td><td>${money(t.amount)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No invoices or payment history connected to this case.</div>`}`)}
+      ${section("Documents",btn("Open Documents","navigate('documents')"),`<div class="empty">Documents for this case can be opened and managed from the Documents module. Case ID: ${escv(active.id)}</div>`)}
+    </div>`;
+  }
+  content.innerHTML=layout("Case 360°","Everything about your case, connected in one place.")+`<div class="panel"><div class="panel-body" style="padding:16px"><div class="toolbar" style="margin:0"><input class="filter" id="caseDetailsSearch" value="${escv(query)}" placeholder="Search case number, client name, phone, title or court..." oninput="caseDetails360LiveSearch(this.value)" onkeydown="if(event.key==='Enter'){caseDetails360Search(this.value)}"><button class="primary" onclick="caseDetails360Search(document.getElementById('caseDetailsSearch').value)">Search</button></div></div></div><div class="case360-layout"><div id="case360Matches"><h3>Matching Cases (${matches.length})</h3>${matches.map(c=>`<button class="case360-result" onclick="caseDetails360Enhanced(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${escv(c.number||"No case number")}</strong><span>${escv(c.title||"Untitled case")}</span><small>${escv(c.court||"No court")} • ${escv(c.client||"No client")}</small></button>`).join("")||`<div class="empty">No matching cases.</div>`}</div><div>${workspace}</div></div>`;
+}
+function caseDetails360LiveSearch(value){
+  const host=document.getElementById("case360Matches");
+  if(!host)return;
+  const q=String(value||"").trim().toLowerCase();
+  const clients=Array.isArray(state.clients)?state.clients:[];
+  const casesList=Array.isArray(state.cases)?state.cases:[];
+  const norm=v=>String(v??"").toLowerCase();
+  const escv=v=>esc(v==null?"":String(v));
+  const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
+  const matches=casesList.filter(c=>!q||[c.number,c.title,c.court,c.type,c.status,c.client,c.cnr,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q))));
+  host.innerHTML=`<h3>Matching Cases (${matches.length})</h3>`+(matches.map(c=>`<button class="case360-result" onclick="caseDetails360Enhanced(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${escv(c.number||"No case number")}</strong><span>${escv(c.title||"Untitled case")}</span><small>${escv(c.court||"No court")} • ${escv(c.client||"No client")}</small></button>`).join("")||`<div class="empty">No matching cases.</div>`);
+}
+
+function caseDetails360Search(value){caseDetails360Enhanced(String(value||document.getElementById("caseDetailsSearch")?.value||""));}
+if(typeof pages!=="undefined") pages["case-details"]=caseDetails360Enhanced;
+window.caseDetails=caseDetails360Enhanced;
+
+
+// Case 360 print/save actions
+window.printCase360=function(){
+  const node=document.querySelector(".c360-workspace");
+  if(!node){alert("Please select a case first.");return;}
+  const popup=window.open("","_blank","width=1100,height=800");
+  if(!popup){alert("Please allow pop-ups to print Case 360.");return;}
+  popup.document.write("<!doctype html><html><head><title>Case 360</title><style>body{font-family:Arial,sans-serif;color:#172033;padding:24px}button{display:none!important}.c360-workspace{max-width:1100px;margin:auto}.c360-hero{background:#173b8f;color:#fff;padding:24px;border-radius:12px}.c360-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.c360-summary>div,.c360-section,.c360-card{border:1px solid #dbe2ef;border-radius:10px;padding:14px}.c360-table-wrap{overflow:visible}table{width:100%;border-collapse:collapse}th,td{border:1px solid #dbe2ef;padding:8px;text-align:left}h3{margin-top:22px}@media print{body{padding:0}.c360-summary{grid-template-columns:repeat(4,1fr)}} </style></head><body>"+node.outerHTML+"</body></html>");
+  popup.document.close();
+  popup.focus();
+  setTimeout(()=>popup.print(),300);
+};
+window.saveCase360=function(){
+  const node=document.querySelector(".c360-workspace");
+  if(!node){alert("Please select a case first.");return;}
+  const number=(window.case360ActiveCaseId||"case").toString().replace(/[^a-z0-9_-]/gi,"_");
+  const html="<!doctype html><html><head><meta charset=\"utf-8\"><title>Case 360</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#172033}table{width:100%;border-collapse:collapse}th,td{border:1px solid #dbe2ef;padding:8px;text-align:left}.c360-hero{background:#173b8f;color:#fff;padding:20px;border-radius:12px}.c360-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.c360-summary>div{border:1px solid #dbe2ef;padding:12px;border-radius:10px}button{display:none!important}</style></head><body>"+node.outerHTML+"</body></html>";
+  const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="Case-360-"+number+".html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
