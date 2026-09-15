@@ -514,3 +514,46 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .sidebar{width:88vw;padding-left:12px;padding-right:12px}
   .nav-item{padding-left:10px;padding-right:10px;gap:9px}
 }
+
+/* Final mobile alignment and readability fix — layout only */
+@media (max-width:720px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  #app,.main,.content{min-width:0;max-width:100%;}
+  .sidebar{width:min(320px,88vw);padding:16px 12px 12px;overflow-y:auto;overflow-x:hidden}
+  .brand{width:100%;min-width:0}
+  nav{width:100%;min-width:0;gap:5px}
+  .nav-item{display:flex;align-items:center;width:100%;min-width:0;min-height:48px;padding:12px 13px;gap:12px;text-align:left;white-space:normal;word-break:normal;overflow:visible}
+  .nav-item:first-letter{font-size:16px}
+  .nav-item span{display:block;flex:1;min-width:0;white-space:normal;overflow-wrap:break-word;line-height:1.35}
+  .sidebar-bottom,.profile-mini{width:100%;min-width:0}
+  .topbar{min-width:0;width:100%;gap:10px}
+  .topbar>*{min-width:0}
+  .content{padding:16px 12px}
+  .page-title{width:100%;min-width:0;align-items:stretch;flex-wrap:wrap}
+  .page-title>div{min-width:0;flex:1 1 180px}
+  .page-title h1{font-size:20px;line-height:1.25;overflow-wrap:anywhere}
+  .page-title p{line-height:1.45;overflow-wrap:anywhere}
+  .page-title button,.page-title .primary,.page-title .secondary{max-width:100%;white-space:normal}
+  .toolbar{flex-wrap:wrap;align-items:stretch}
+  .toolbar>*{min-width:0;max-width:100%}
+  .toolbar .filter:first-child{flex:1 1 100%;width:100%}
+  .form-grid{grid-template-columns:minmax(0,1fr)!important}
+  .field,.field.full{grid-column:auto!important;min-width:0}
+  .field input,.field select,.field textarea{width:100%;max-width:100%;min-width:0;font-size:14px;padding:11px}
+  .form-actions{flex-wrap:wrap;justify-content:stretch}
+  .form-actions button{flex:1 1 120px;min-height:42px}
+  .panel{min-width:0;max-width:100%;overflow:hidden}
+  .panel-head{gap:10px;flex-wrap:wrap;min-width:0;overflow-wrap:anywhere}
+  .panel-body{min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:620px}
+  .modal{padding:10px;align-items:center}
+  .modal-card{width:100%;max-width:100%;max-height:92vh;overflow-y:auto;padding:16px}
+  .modal-head{gap:10px;align-items:flex-start}
+  .modal-head h3{line-height:1.3;overflow-wrap:anywhere}
+}
+@media (max-width:380px){
+  .sidebar{width:92vw}
+  .nav-item{padding:11px 10px;gap:10px;font-size:12px}
+  .content{padding:14px 10px}
+  .page-title h1{font-size:19px}
+}
