@@ -1,49 +1,21 @@
-/* Final mobile readability fix for Task and Case lists only. */
-@media (max-width: 720px){
+/* Final mobile card alignment fix for Task, Case and Client lists */
+@media (max-width:720px){
   html,body{max-width:100%;overflow-x:hidden}
-  #content,.content,.panel,.panel-body{min-width:0;max-width:100%}
-  .content{padding:16px 14px}
-  .page-title h1,.page-title p{overflow-wrap:normal;word-break:normal}
-  .page-title .primary,.page-title .secondary{max-width:100%;white-space:normal}
-
-  /* Any responsive table/card generated for Tasks or Cases */
-  #taskTable,#caseClientTable,#casesTable{width:100%;min-width:0;table-layout:auto}
-  #taskTable th,#taskTable td,#caseClientTable th,#caseClientTable td,#casesTable th,#casesTable td{
-    white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:none;
-    vertical-align:top;line-height:1.45;
-  }
-  #taskTable td:first-child,#caseClientTable td:first-child,#casesTable td:first-child{
-    width:34%;min-width:0;font-weight:650;
-  }
-  #taskTable td:last-child,#caseClientTable td:last-child,#casesTable td:last-child{min-width:0}
-
-  /* Existing mobile card layouts */
-  .task-card,.case-card,.client-card,[data-record-type="task"],[data-record-type="case"]{
-    width:100%;max-width:100%;min-width:0;overflow:hidden;
-  }
-  .task-card *, .case-card *, .client-card *,
-  [data-record-type="task"] *,[data-record-type="case"] *{
-    min-width:0;max-width:100%;
-    word-break:normal;overflow-wrap:normal;hyphens:none;
-  }
-  .task-card .task-name,.case-card .case-title,.case-card .case-number,
-  [data-record-type="task"] .task-name,[data-record-type="case"] .case-title{
-    white-space:normal;line-height:1.35;
-  }
-  .task-card .value,.case-card .value,.client-card .value{overflow-wrap:anywhere}
-  .task-card button,.case-card button,.client-card button{max-width:100%;white-space:normal}
-
-  /* If the app uses the label/value row pattern, keep it like the reference screenshot. */
-  .task-row,.case-row,.client-row,.detail-row{display:grid;grid-template-columns:minmax(112px,34%) minmax(0,1fr);gap:12px;align-items:start}
-  .task-row>*,.case-row>*,.client-row>*,.detail-row>*{min-width:0}
-  .task-row .label,.case-row .label,.client-row .label,.detail-row .label{white-space:normal;word-break:normal}
-  .task-row .value,.case-row .value,.client-row .value,.detail-row .value{white-space:normal;overflow-wrap:normal;word-break:normal}
-
-  /* Buttons stay inside cards and remain easy to tap. */
-  .task-card .actions,.case-card .actions,.client-card .actions{display:flex;flex-wrap:wrap;gap:10px}
-  .task-card .actions button,.case-card .actions button,.client-card .actions button{flex:1 1 140px;min-height:44px}
+  #content,.content,.panel{min-width:0;max-width:100%}
+  #taskTable,#caseTable,#clientTable{display:block!important;width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:separate!important;border-spacing:0!important}
+  #taskTable thead,#caseTable thead,#clientTable thead{display:none!important}
+  #taskTable tbody,#caseTable tbody,#clientTable tbody{display:block!important;width:100%!important}
+  #taskTable tbody tr,#caseTable tbody tr,#clientTable tbody tr{display:block!important;width:100%!important;box-sizing:border-box!important;margin:0 0 14px!important;padding:14px 16px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:#fff!important;box-shadow:0 5px 16px rgba(30,58,138,.06)!important}
+  #taskTable tbody td,#caseTable tbody td,#clientTable tbody td{display:grid!important;grid-template-columns:minmax(108px,34%) minmax(0,1fr)!important;gap:12px!important;align-items:start!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;padding:12px 0!important;border-bottom:1px dashed #dfe6f0!important;text-align:left!important;white-space:normal!important;overflow:visible!important}
+  #taskTable tbody td:last-child,#caseTable tbody td:last-child,#clientTable tbody td:last-child{border-bottom:0!important;padding-bottom:2px!important}
+  #taskTable tbody td::before,#caseTable tbody td::before,#clientTable tbody td::before{grid-column:1!important;display:block!important;width:auto!important;max-width:none!important;min-width:0!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;line-height:1.45!important}
+  #taskTable tbody td>*:not(.compound-value),#caseTable tbody td>*:not(.compound-value),#clientTable tbody td>*:not(.compound-value){grid-column:2!important;width:100%!important;max-width:none!important;min-width:0!important;white-space:normal!important;overflow-wrap:break-word!important;word-break:normal!important;line-height:1.5!important}
+  #taskTable .compound-value,#caseTable .compound-value,#clientTable .compound-value{grid-column:2!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;width:100%!important;min-width:0!important;max-width:none!important}
+  #taskTable .compound-value strong,#taskTable .compound-value span,#caseTable .compound-value strong,#caseTable .compound-value span,#clientTable .compound-value strong,#clientTable .compound-value span{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;white-space:normal!important;overflow-wrap:break-word!important;word-break:normal!important;line-height:1.45!important}
+  #taskTable tbody td:last-child>button,#caseTable tbody td:last-child>button,#clientTable tbody td:last-child>button{grid-column:2!important;width:100%!important;max-width:none!important;min-height:44px!important}
+  #taskTable .badge,#caseTable .badge,#clientTable .badge{justify-self:start!important;width:max-content!important;max-width:100%!important}
+  .panel:has(#taskTable),.panel:has(#caseTable),.panel:has(#clientTable){overflow:visible!important}
 }
-@media (max-width:430px){
-  .task-row,.case-row,.client-row,.detail-row{grid-template-columns:minmax(105px,32%) minmax(0,1fr);gap:10px}
-  #taskTable td:first-child,#caseClientTable td:first-child,#casesTable td:first-child{width:32%}
+@media(max-width:380px){
+  #taskTable tbody td,#caseTable tbody td,#clientTable tbody td{grid-template-columns:minmax(94px,32%) minmax(0,1fr)!important;gap:10px!important;padding:11px 0!important}
 }
