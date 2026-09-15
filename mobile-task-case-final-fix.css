@@ -1,0 +1,49 @@
+/* Final mobile readability fix for Task and Case lists only. */
+@media (max-width: 720px){
+  html,body{max-width:100%;overflow-x:hidden}
+  #content,.content,.panel,.panel-body{min-width:0;max-width:100%}
+  .content{padding:16px 14px}
+  .page-title h1,.page-title p{overflow-wrap:normal;word-break:normal}
+  .page-title .primary,.page-title .secondary{max-width:100%;white-space:normal}
+
+  /* Any responsive table/card generated for Tasks or Cases */
+  #taskTable,#caseClientTable,#casesTable{width:100%;min-width:0;table-layout:auto}
+  #taskTable th,#taskTable td,#caseClientTable th,#caseClientTable td,#casesTable th,#casesTable td{
+    white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:none;
+    vertical-align:top;line-height:1.45;
+  }
+  #taskTable td:first-child,#caseClientTable td:first-child,#casesTable td:first-child{
+    width:34%;min-width:0;font-weight:650;
+  }
+  #taskTable td:last-child,#caseClientTable td:last-child,#casesTable td:last-child{min-width:0}
+
+  /* Existing mobile card layouts */
+  .task-card,.case-card,.client-card,[data-record-type="task"],[data-record-type="case"]{
+    width:100%;max-width:100%;min-width:0;overflow:hidden;
+  }
+  .task-card *, .case-card *, .client-card *,
+  [data-record-type="task"] *,[data-record-type="case"] *{
+    min-width:0;max-width:100%;
+    word-break:normal;overflow-wrap:normal;hyphens:none;
+  }
+  .task-card .task-name,.case-card .case-title,.case-card .case-number,
+  [data-record-type="task"] .task-name,[data-record-type="case"] .case-title{
+    white-space:normal;line-height:1.35;
+  }
+  .task-card .value,.case-card .value,.client-card .value{overflow-wrap:anywhere}
+  .task-card button,.case-card button,.client-card button{max-width:100%;white-space:normal}
+
+  /* If the app uses the label/value row pattern, keep it like the reference screenshot. */
+  .task-row,.case-row,.client-row,.detail-row{display:grid;grid-template-columns:minmax(112px,34%) minmax(0,1fr);gap:12px;align-items:start}
+  .task-row>*,.case-row>*,.client-row>*,.detail-row>*{min-width:0}
+  .task-row .label,.case-row .label,.client-row .label,.detail-row .label{white-space:normal;word-break:normal}
+  .task-row .value,.case-row .value,.client-row .value,.detail-row .value{white-space:normal;overflow-wrap:normal;word-break:normal}
+
+  /* Buttons stay inside cards and remain easy to tap. */
+  .task-card .actions,.case-card .actions,.client-card .actions{display:flex;flex-wrap:wrap;gap:10px}
+  .task-card .actions button,.case-card .actions button,.client-card .actions button{flex:1 1 140px;min-height:44px}
+}
+@media (max-width:430px){
+  .task-row,.case-row,.client-row,.detail-row{grid-template-columns:minmax(105px,32%) minmax(0,1fr);gap:10px}
+  #taskTable td:first-child,#caseClientTable td:first-child,#casesTable td:first-child{width:32%}
+}
