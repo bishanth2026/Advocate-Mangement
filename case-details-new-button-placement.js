@@ -19,6 +19,9 @@
       return /case number|parties \/ clients|next hearing|status/i.test(text);
     });
     if(!casePanel) return;
+    if(casePanel.previousElementSibling!==clientPanel){
+      clientPanel.parentNode.insertBefore(casePanel,clientPanel.nextSibling);
+    }
     var existing=content.querySelector('[data-case-details-heading]');
     if(!existing){
       existing=document.createElement('div');
@@ -27,6 +30,8 @@
       var heading=document.createElement('h3');
       heading.textContent='Case Details';
       existing.appendChild(heading);
+    }
+    if(existing.parentNode!==casePanel.parentNode || existing.nextElementSibling!==casePanel){
       casePanel.parentNode.insertBefore(existing,casePanel);
     }
     if(button.parentNode!==existing) existing.appendChild(button);
