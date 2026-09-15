@@ -1,75 +1,95 @@
 (function(){
   'use strict';
   var courts = [
-    'JFCM Court, Kunnamangalam',
-    'District Court / Rent Control Appellate Authority, Kozhikode',
-    'Sub Court Kozhikode',
-    'Munsiff Court 1 Kozhikode',
-    'Munsiff Court 2 Kozhikode',
-    'JFCM 1 Kozhikode',
-    'JFCM 2 Kozhikode',
-    'JFCM 3 Kozhikode',
-    'JFCM 5 Kozhikode',
+    'District Court, Kozhikode',
+    'Additional District Court, Kozhikode',
+    'Sub Court, Kozhikode',
+    'Munsiff Court, Kozhikode',
     'Chief Judicial Magistrate Court, Kozhikode',
-    'MACT Kozhikode',
+    'JFCM I Kozhikode',
+    'JFCM II Kozhikode',
+    'JFCM III Kozhikode',
     'JFCM IV Kozhikode',
-    'Additional District and Sessions Court-III, Kozhikode',
-    'Additional District Court, POCSO, Kozhikode',
-    'JFCM 7, NI ACT Cases, Kozhikode',
-    'Special Fast Track Court, Kozhikode',
-    'Commercial Court Kozhikode',
-    'Judicial First Class Magistrate 8 Kozhikode',
-    'Judicial First Class Magistrate 9 Kozhikode',
-    'Judicial First Class Magistrate 10 Kozhikode',
-    'Judicial First Class Magistrate 11 Kozhikode',
-    'Family Court Vatakara',
-    'Munsiff Court,Koyilandy',
-    'Sub Court,Koyilandy',
-    'Judicial First Class Magistrate Court, Koyilandy',
-    'Special Fast Track Court, Koyilandy',
-    'Commercial Court, Koyilandy',
-    'Family Court,Kozhikode',
-    'Munsiff-Magistrate Court, Perambra',
-    'Judicial First Class Magistrate Court-I, Perambra',
-    'Judicial First Class Magistrate Court-II, Perambra',
-    'Munsiff Court, Payyoli',
-    'Judicial First Class Magistrate Court,Payyoli',
-    'Munsiff Court, Nadapuram',
-    'Judicial First Class Magistrate Court, Nadapuram',
-    'Fast Track Special Court, Nadapuram',
-    'JFCM I Thamarassery',
-    'JFCM II Thamarassery',
-    'Munsiff Court, Thamarassery',
-    'JFCM VI Kozhikode, Eranhipalam',
-    'Spl. Addl Sessions Court, Marad Cases, Kozhikode',
-    'Addl. District and Sessions Court, Vatakara',
-    'Judicial First Class Magistrate Court, Vatakara',
-    'MACT Vatakara',
+    'JFCM V Kozhikode',
+    'JFCM VI Kozhikode',
+    'JFCM VII Kozhikode',
+    'JFCM VIII Kozhikode',
+    'JFCM IX Kozhikode',
+    'JFCM X Kozhikode',
+    'Family Court, Kozhikode',
+    'MACT, Kozhikode',
+    'Commercial Court, Kozhikode',
+    'Special Court, Kozhikode',
+    'District Court / Rent Control Appellate Authority, Kozhikode',
+    'Family Court, Vatakara',
     'Sub Court, Vatakara',
-    'Munsiff Court, Vadakara',
-    'JFCM II Court, Vatakara',
-    'NDPS Act Cases, Vatakara',
+    'Munsiff Court, Vatakara',
+    'JFCM Court, Vatakara',
+    'MACT, Vatakara',
     'Commercial Court, Vatakara',
-    'Addl. District Court-II Vatakara',
-    'Grama Nyayalaya Kunnummal',
-    'Grama Nyayalaya Koduvally'
+    'Sub Court, Koyilandy',
+    'Munsiff Court, Koyilandy',
+    'JFCM Court, Koyilandy',
+    'Sub Court, Perambra',
+    'Munsiff Court, Perambra',
+    'JFCM Court, Perambra',
+    'Munsiff Court, Payyoli',
+    'JFCM Court, Payyoli',
+    'Munsiff Court, Nadapuram',
+    'JFCM Court, Nadapuram',
+    'Munsiff Court, Thamarassery',
+    'JFCM Court, Thamarassery',
+    'JFCM Court, Kunnamangalam',
+    'Grama Nyayalaya, Kunnummal',
+    'Grama Nyayalaya, Koduvally'
   ];
-  function enhance(){
-    var input=document.getElementById('partyCourt');
-    if(!input || input.dataset.courtSearchable==='1') return;
-    input.dataset.courtSearchable='1';
-    input.setAttribute('list','court-search-options');
-    input.setAttribute('autocomplete','off');
-    input.placeholder='Type or select court';
+  function getList(){
     var list=document.getElementById('court-search-options');
     if(!list){
       list=document.createElement('datalist');
       list.id='court-search-options';
-      courts.forEach(function(c){var option=document.createElement('option');option.value=c;list.appendChild(option);});
       document.body.appendChild(list);
     }
+    var seen={};
+    courts.forEach(function(c){seen[c]=true;});
+    document.querySelectorAll('select option').forEach(function(o){
+      var v=(o.value||o.textContent||'').trim();
+      if(v && !/^select court$/i.test(v) && !/^select$/i.test(v)) seen[v]=true;
+    });
+    list.innerHTML='';
+    Object.keys(seen).forEach(function(c){
+      var option=document.createElement('option');
+      option.value=c;
+      list.appendChild(option);
+    });
+    return list;
+  }
+  function enhance(){
+    getList();
+    document.querySelectorAll('#modal label, #modal .form-group, #modal .field, #modal .form-field').forEach(function(wrapper){
+      var text=(wrapper.firstChild && wrapper.firstChild.textContent || wrapper.textContent || '').trim();
+      if(!/^court$/i.test(text.split(/\s+/)[0] || '') && !/\bCourt\b/i.test(text)) return;
+      var select=wrapper.querySelector('select');
+      if(!select || select.dataset.courtSearchable==='1') return;
+      var input=document.createElement('input');
+      Array.prototype.slice.call(select.attributes).forEach(function(a){
+        if(a.name!=='class' && a.name!=='style') input.setAttribute(a.name,a.value);
+      });
+      input.type='text';
+      input.value=(select.value||'').trim();
+      if(/^select court$/i.test(input.value) || /^select$/i.test(input.value)) input.value='';
+      input.placeholder='Type court name...';
+      input.setAttribute('list','court-search-options');
+      input.setAttribute('autocomplete','off');
+      input.className=select.className;
+      input.style.cssText=select.style.cssText;
+      input.dataset.courtSearchable='1';
+      select.parentNode.replaceChild(input,select);
+    });
+    var direct=document.getElementById('partyCourt');
+    if(direct){direct.setAttribute('list','court-search-options');direct.placeholder='Type court name...';}
   }
   var observer=new MutationObserver(enhance);
-  function start(){enhance();var body=document.getElementById('content');if(body)observer.observe(body,{childList:true,subtree:true});}
+  function start(){enhance();observer.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
 })();
