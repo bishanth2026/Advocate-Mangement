@@ -23,6 +23,58 @@
     }
   }
 
+  function makeCourtTypeahead() {
+    document.querySelectorAll('.field select').forEach(function (select) {
+      if (select.dataset.courtTypeahead === '1') return;
+      var field = select.closest('.field');
+      var label = field && field.querySelector('label');
+      if (!label || !/^court$/i.test(label.textContent.trim())) return;
+
+      var listId = 'courtOptionsTypeahead';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.setAttribute('list', listId);
+      input.autocomplete = 'off';
+      input.placeholder = 'Type to search court...';
+      input.className = select.className || '';
+      input.value = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
+      input.dataset.courtInput = '1';
+
+      var datalist = document.getElementById(listId);
+      if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = listId;
+        document.body.appendChild(datalist);
+      }
+      Array.from(select.options).forEach(function (option) {
+        if (!option.value) return;
+        var exists = Array.from(datalist.options).some(function (x) { return x.value === option.text; });
+        if (!exists) {
+          var item = document.createElement('option');
+          item.value = option.text;
+          datalist.appendChild(item);
+        }
+      });
+
+      function syncCourt() {
+        var value = input.value.trim().toLowerCase();
+        var match = Array.from(select.options).find(function (option) {
+          return option.text.trim().toLowerCase() === value || option.value.trim().toLowerCase() === value;
+        });
+        if (match) {
+          select.value = match.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+
+      input.addEventListener('input', syncCourt);
+      input.addEventListener('change', syncCourt);
+      select.style.display = 'none';
+      select.dataset.courtTypeahead = '1';
+      select.insertAdjacentElement('afterend', input);
+    });
+  }
+
   document.addEventListener('click', function (event) {
     var item = event.target.closest && event.target.closest('[data-page]');
     if (item && !item.disabled) {
@@ -44,14 +96,12 @@
       }
     }
 
-    // Close any modal when its backdrop is tapped, including on iPhone.
     if (event.target.classList && event.target.classList.contains('modal')) {
       event.target.classList.remove('show');
       event.target.setAttribute('aria-hidden', 'true');
     }
   }, false);
 
-  // Avoid dead buttons when a browser restores a stale disabled state.
   document.addEventListener('touchstart', function (event) {
     var target = event.target.closest && event.target.closest('button, a, [role="button"]');
     if (target) target.classList.add('touch-active');
@@ -64,6 +114,12 @@
   window.addEventListener('error', function (event) {
     console.error('[AdvocateDesk]', event.error || event.message);
   });
+
+  var observer = new MutationObserver(function () {
+    makeCourtTypeahead();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  makeCourtTypeahead();
 
   var style = document.createElement('style');
   style.textContent = '\n    button, a, [role="button"] { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }\n    button.tap-active, button.touch-active { transform: translateY(1px); opacity: .86; }\n    @media (max-width: 900px) {\n      .sidebar { transition: transform .2s ease; }\n      .sidebar.open { transform: translateX(0); }\n      .mobile-overlay { display: none; }\n      .mobile-overlay.show { display: block; }\n    }\n  ';
