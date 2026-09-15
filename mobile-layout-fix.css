@@ -1,0 +1,49 @@
+/* Mobile-only layout correction. No desktop styles or application logic are changed. */
+@media (max-width:720px){
+  html,body{max-width:100%;overflow-x:hidden}
+  #app{min-width:0;width:100%}
+  .main{min-width:0;width:100%;margin-left:0}
+  .topbar{min-width:0;height:auto;min-height:62px;gap:10px;padding:12px 14px;flex-wrap:nowrap}
+  .mobile-menu{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border-radius:10px;color:#172554;background:#eef4fb;font-size:22px;line-height:1}
+  .search{min-width:0;flex:1;width:auto;max-width:none}
+  .top-actions{flex:0 0 auto;gap:6px}
+  .icon-btn{padding:9px;width:40px;height:40px}
+  .user-chip{padding:10px;font-size:11px;white-space:nowrap}
+  .content{width:100%;min-width:0;padding:14px}
+  .page-title{width:100%;min-width:0;gap:10px;align-items:stretch}
+  .page-title h1,.page-title p{overflow-wrap:anywhere;word-break:normal}
+  .page-title .primary,.page-title .secondary{max-width:100%;white-space:normal;line-height:1.35}
+  .panel{width:100%;min-width:0;overflow:hidden}
+  .panel-head{width:100%;min-width:0;gap:8px;flex-wrap:wrap;align-items:flex-start}
+  .panel-head h3,.panel-head span{min-width:0;overflow-wrap:anywhere}
+  .toolbar{width:100%;min-width:0;flex-wrap:wrap}
+  .toolbar .filter,.toolbar input,.toolbar select{min-width:0;max-width:100%;flex:1 1 150px}
+  .form-grid{width:100%;min-width:0;grid-template-columns:minmax(0,1fr)}
+  .field,.field.full{min-width:0;grid-column:auto}
+  .field input,.field select,.field textarea{max-width:100%;min-width:0;font-size:16px}
+  .form-actions{flex-wrap:wrap;justify-content:stretch}
+  .form-actions button{flex:1 1 130px;min-width:0}
+  .modal{padding:10px}
+  .modal-card{width:100%;max-width:100%;max-height:calc(100vh - 20px);overflow:auto;padding:16px}
+  .modal-head h3{min-width:0;overflow-wrap:anywhere}
+  table{min-width:0!important;width:100%!important;table-layout:fixed}
+  th,td{padding:10px 8px;font-size:11px;overflow-wrap:anywhere;word-break:break-word;vertical-align:top}
+  th:first-child,td:first-child{width:34%}
+  .case-link{overflow-wrap:anywhere;word-break:break-word}
+  .table-wrap,.table-responsive{width:100%;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .list-row{min-width:0;align-items:flex-start;padding:12px}
+  .list-main{min-width:0;overflow-wrap:anywhere}
+  .list-main strong,.list-main small{overflow-wrap:anywhere}
+  .quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}
+}
+@media (max-width:430px){
+  .topbar{padding:10px;gap:7px}
+  .mobile-menu{flex-basis:38px;width:38px;height:38px}
+  .top-actions .icon-btn{display:none}
+  .user-chip{max-width:42px;overflow:hidden}
+  .content{padding:10px}
+  .quick-grid{grid-template-columns:minmax(0,1fr)}
+  .page-title h1{font-size:20px}
+  .panel-head{padding:13px}
+  th,td{padding:9px 6px;font-size:10px}
+}
