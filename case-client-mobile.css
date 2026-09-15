@@ -1,0 +1,76 @@
+/* Case & Client mobile readability fix — scoped to mobile only. */
+@media (max-width:720px){
+  /* Keep the Case & Client panel inside the phone viewport. */
+  #caseClientTable,
+  .case-client-table,
+  .case-client-table table{
+    width:100% !important;
+    min-width:0 !important;
+    table-layout:fixed !important;
+  }
+  #caseClientTable thead,
+  .case-client-table thead{display:none !important}
+  #caseClientTable tbody,
+  .case-client-table tbody{display:block !important;width:100% !important}
+  #caseClientTable tr,
+  .case-client-table tr{
+    display:grid !important;
+    grid-template-columns:minmax(92px, .72fr) minmax(0, 1.28fr) !important;
+    gap:0 14px !important;
+    width:100% !important;
+    padding:16px 14px !important;
+    margin:0 !important;
+    border-bottom:1px solid #e5eaf2 !important;
+    background:#fff !important;
+  }
+  #caseClientTable td,
+  .case-client-table td{
+    display:block !important;
+    width:auto !important;
+    min-width:0 !important;
+    padding:7px 0 !important;
+    border:0 !important;
+    font-size:13px !important;
+    line-height:1.45 !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    white-space:normal !important;
+    color:#24324a !important;
+  }
+  #caseClientTable td:first-child,
+  .case-client-table td:first-child{
+    grid-column:1 !important;
+    grid-row:1 / span 6 !important;
+    align-self:start !important;
+    font-size:18px !important;
+    font-weight:800 !important;
+    line-height:1.35 !important;
+    color:#172554 !important;
+    padding-top:2px !important;
+    overflow-wrap:break-word !important;
+  }
+  #caseClientTable td:nth-child(n+2),
+  .case-client-table td:nth-child(n+2){grid-column:2 !important}
+  #caseClientTable td:nth-child(2),
+  .case-client-table td:nth-child(2){font-weight:650 !important;font-size:14px !important;color:#243f7a !important}
+  #caseClientTable td:last-child,
+  .case-client-table td:last-child{padding-bottom:0 !important}
+  #caseClientTable .case-link,
+  .case-client-table .case-link{display:block !important;overflow-wrap:anywhere !important;word-break:normal !important}
+  #caseClientTable .badge,
+  .case-client-table .badge{display:inline-flex !important;max-width:100% !important;white-space:normal !important}
+  #caseClientTable button,
+  .case-client-table button{max-width:100% !important;min-height:40px !important;white-space:normal !important}
+
+  /* If the page uses a wrapper around the table, remove forced desktop width. */
+  #caseClientTable + *,
+  .case-client-table + *{max-width:100% !important}
+}
+@media (max-width:430px){
+  #caseClientTable tr,
+  .case-client-table tr{grid-template-columns:minmax(76px,.62fr) minmax(0,1.38fr) !important;padding:14px 10px !important;gap:0 10px !important}
+  #caseClientTable td,
+  .case-client-table td{font-size:12px !important;padding:6px 0 !important}
+  #caseClientTable td:first-child,
+  .case-client-table td:first-child{font-size:16px !important}
+}
