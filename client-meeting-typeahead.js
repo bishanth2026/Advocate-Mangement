@@ -23,8 +23,7 @@
       function render(){
         var q=input.value.trim().toLowerCase();
         menu.innerHTML='';
-        if(!q){menu.style.display='none';return;}
-        options.filter(function(o){return o.textContent.trim().toLowerCase().includes(q);}).forEach(function(o){
+        options.filter(function(o){return !q || o.textContent.trim().toLowerCase().includes(q);}).forEach(function(o){
           var item=document.createElement('button');
           item.type='button'; item.textContent=o.textContent.trim();
           item.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;cursor:pointer;';
