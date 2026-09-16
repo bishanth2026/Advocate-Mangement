@@ -3,7 +3,7 @@
 function txt(v){return v==null?'':String(v).trim();}
 function norm(v){return txt(v).toLowerCase().replace(/\s+/g,' ');}
 function data(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')||{};}catch(e){return {};}}
-function modal(){var m=document.getElementById('modal'),t=document.getElementById('modalTitle');return m&&!m.classList.contains('hidden')&&t&&/invoice|finance|payment|create invoice/i.test(t.textContent||'')?m:null;}
+function modal(){var m=document.getElementById('modal'),t=document.getElementById('modalTitle');return m&&!m.classList.contains('hidden')&&t&&/create invoice|new invoice|invoice/i.test(t.textContent||'')?m:null;}
 function fieldByLabel(root,kind){var labels=[].slice.call(root.querySelectorAll('label'));for(var i=0;i<labels.length;i++){var l=norm(labels[i].textContent);var ok=kind==='case'?l==='case'||l.indexOf('case number')>=0||l.indexOf('case no')>=0:l==='client'||l.indexOf('client name')>=0;if(!ok)continue;var id=labels[i].htmlFor||labels[i].getAttribute('for');if(id){var el=document.getElementById(id);if(el)return el;}var p=labels[i].parentElement;var el=p&&p.querySelector('select,input:not([type="hidden"]),textarea');if(el)return el;}return null;}
 function cases(){var d=data();return [].concat(Array.isArray(d.cases)?d.cases:[],Array.isArray(d.caseRecords)?d.caseRecords:[]);}
 function clients(){var d=data();return Array.isArray(d.clients)?d.clients:[];}
