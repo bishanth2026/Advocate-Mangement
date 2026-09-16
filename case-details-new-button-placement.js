@@ -5,14 +5,6 @@
     var content=document.getElementById('content');
     if(!content) return false;
 
-    var title=Array.prototype.find.call(content.querySelectorAll('h1'),function(el){
-      return (el.textContent||'').trim()==='All Cases';
-    });
-    if(!title) return false;
-
-    var pageTitle=title.closest('.page-title');
-    if(!pageTitle) return false;
-
     var clientHeading=Array.prototype.find.call(content.querySelectorAll('h3,h2'),function(el){
       return /all clients\s*\/\s*parties/i.test((el.textContent||'').trim());
     });
@@ -28,25 +20,38 @@
     });
     if(!casePanel) return false;
 
+    var oldPageTitle=Array.prototype.find.call(content.querySelectorAll('.page-title'),function(el){
+      return /all cases/i.test((el.textContent||'').trim());
+    });
+    var oldHeading=content.querySelector('[data-case-details-heading]');
+    var heading=oldHeading||oldPageTitle;
+
+    if(!heading){
+      heading=document.createElement('div');
+      heading.className='page-title';
+      heading.setAttribute('data-case-details-heading','true');
+      heading.innerHTML='<h1>All Cases</h1>';
+    }else{
+      heading.setAttribute('data-case-details-heading','true');
+      if(!/all cases/i.test((heading.textContent||'').trim())){
+        heading.innerHTML='<h1>All Cases</h1>';
+      }
+    }
+
     var changed=false;
     if(clientPanel.parentNode===content && content.firstElementChild!==clientPanel){
       content.insertBefore(clientPanel,content.firstChild);
       changed=true;
     }
-    if(pageTitle.parentNode!==content || pageTitle.previousElementSibling!==clientPanel){
-      content.insertBefore(pageTitle,clientPanel.nextSibling);
+    if(heading.parentNode!==content || heading.previousElementSibling!==clientPanel){
+      content.insertBefore(heading,clientPanel.nextSibling);
       changed=true;
     }
-    if(casePanel.parentNode!==content || casePanel.previousElementSibling!==pageTitle){
-      content.insertBefore(casePanel,pageTitle.nextSibling);
+    if(casePanel.parentNode!==content || casePanel.previousElementSibling!==heading){
+      content.insertBefore(casePanel,heading.nextSibling);
       changed=true;
     }
 
-    var oldHeading=content.querySelector('[data-case-details-heading]');
-    if(oldHeading){
-      oldHeading.remove();
-      changed=true;
-    }
     return changed;
   }
 
@@ -54,9 +59,7 @@
     var attempts=0;
     function tryArrange(){
       if(attempts++>=12) return;
-      if(!arrangeCaseSections()){
-        setTimeout(tryArrange,100);
-      }
+      if(!arrangeCaseSections()) setTimeout(tryArrange,100);
     }
     tryArrange();
   }
