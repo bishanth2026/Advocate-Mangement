@@ -20,22 +20,16 @@
     });
     if(!casePanel) return false;
 
-    var oldPageTitle=Array.prototype.find.call(content.querySelectorAll('.page-title'),function(el){
-      return /all cases/i.test((el.textContent||'').trim());
-    });
-    var oldHeading=content.querySelector('[data-case-details-heading]');
-    var heading=oldHeading||oldPageTitle;
-
+    var heading=content.querySelector('[data-all-cases-heading]');
     if(!heading){
-      heading=document.createElement('div');
-      heading.className='page-title';
-      heading.setAttribute('data-case-details-heading','true');
-      heading.innerHTML='<h1>All Cases</h1>';
-    }else{
-      heading.setAttribute('data-case-details-heading','true');
-      if(!/all cases/i.test((heading.textContent||'').trim())){
-        heading.innerHTML='<h1>All Cases</h1>';
-      }
+      heading=document.createElement('h2');
+      heading.textContent='All Cases';
+      heading.setAttribute('data-all-cases-heading','true');
+      heading.style.margin='20px 0 12px';
+      heading.style.fontSize='20px';
+      heading.style.fontWeight='700';
+      heading.style.color='var(--text, #111827)';
+      casePanel.parentNode.insertBefore(heading,casePanel);
     }
 
     var changed=false;
