@@ -1,123 +1,122 @@
 (function(){
 'use strict';
-function txt(v){return v==null?'':String(v).trim();}
-function norm(v){return txt(v).toLowerCase().replace(/\s+/g,' ');}
-function data(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')||{};}catch(e){return {};}}
-function modal(){var m=document.getElementById('modal'),t=document.getElementById('modalTitle');return m&&!m.classList.contains('hidden')&&t&&/create invoice|new invoice|invoice/i.test(t.textContent||'')?m:null;}
-function fieldByLabel(root,kind){
-  var labels=[].slice.call(root.querySelectorAll('label'));
-  for(var i=0;i<labels.length;i++){
-    var l=norm(labels[i].textContent);
-    var ok=kind==='case'
-      ?(l==='case'||l.indexOf('case number')>=0||l.indexOf('case no')>=0)
-      :(l==='client'||l.indexOf('client name')>=0);
-    if(!ok)continue;
-    var id=labels[i].htmlFor||labels[i].getAttribute('for');
-    if(id){var byId=document.getElementById(id);if(byId)return byId;}
-    var p=labels[i].parentElement;
-    var el=p&&p.querySelector('select,input:not([type="hidden"]),textarea');
-    if(el)return el;
-  }
-  return null;
-}
-function cases(){var d=data();return [].concat(Array.isArray(d.cases)?d.cases:[],Array.isArray(d.caseRecords)?d.caseRecords:[],Array.isArray(d.allCases)?d.allCases:[]);}
-function clients(){var d=data();return Array.isArray(d.clients)?d.clients:[];}
-function caseNo(c){return txt(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||c.displayNumber);}
-function caseId(c){return txt(c.id||c.caseId||c.case_id||c.value);}
-function clientId(c){return txt(c.id||c.clientId||c.client_id);}
-function clientName(c){return txt(c.name||c.clientName||c.client_name||c.fullName||c.full_name);}
-function linkedClient(c){
-  var links=[c.clientId,c.client_id,c.client,c.clientName,c.client_name,c.party,c.partyName].filter(Boolean).map(norm);
-  var found=clients().find(function(x){return links.indexOf(norm(clientId(x)))>=0||links.indexOf(norm(clientName(x)))>=0;});
+
+var KEY='advocateDeskData';
+function s(v){return v==null?'':String(v).trim();}
+function n(v){return s(v).toLowerCase().replace(/\s+/g,' ');}
+function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){return {};}}
+function allCases(){var d=read();return [].concat(d.cases||[],d.caseRecords||[],d.allCases||[]).filter(Boolean);}
+function allClients(){var d=read();return Array.isArray(d.clients)?d.clients:[];}
+function id(x){return s(x&& (x.id||x.clientId||x.client_id));}
+function name(x){return s(x&& (x.name||x.clientName||x.client_name||x.fullName||x.full_name));}
+function caseId(x){return s(x&& (x.id||x.caseId||x.case_id));}
+function caseNo(x){return s(x&& (x.number||x.caseNumber||x.case_no||x.caseNo||x.case_number||x.displayNumber));}
+function relatedClient(c){
+  if(!c)return null;
+  var refs=[c.clientId,c.client_id,c.client,c.clientName,c.client_name,c.party,c.partyName].map(n).filter(Boolean);
+  var found=allClients().find(function(cl){return refs.indexOf(n(id(cl)))>=0||refs.indexOf(n(name(cl)))>=0;});
   if(found)return found;
-  if(typeof c.client==='string'&&c.client)return {id:'',name:c.client};
+  if(s(c.client))return {id:'',name:s(c.client)};
   return null;
 }
-function visibleCaseText(select){
-  if(!select)return '';
-  var p=select.parentElement;
-  var input=p&&p.querySelector('input:not([type="hidden"]):not([data-finance-client-display])');
-  return input?txt(input.value):'';
+function isInvoiceModal(){
+  var m=document.getElementById('modal'),t=document.getElementById('modalTitle');
+  return !!(m&&!m.classList.contains('hidden')&&t&&/invoice/i.test(t.textContent||''));
 }
-function selectedCase(select){
-  var list=cases();
-  var values=[txt(select&&select.value),visibleCaseText(select)];
-  for(var i=0;i<values.length;i++){
-    var raw=values[i];if(!raw)continue;
-    var found=list.find(function(c){return norm(caseId(c))===norm(raw)||norm(caseNo(c))===norm(raw)||norm(c.title)===norm(raw)||norm(c.name)===norm(raw);});
-    if(found)return found;
-    found=list.find(function(c){return norm(caseNo(c))===norm(raw)||norm(caseNo(c)).indexOf(norm(raw))>=0;});
-    if(found)return found;
+function root(){return document.getElementById('modalBody')||document.getElementById('modal')||document.body;}
+function labelField(kind){
+  var r=root();
+  var labels=[].slice.call(r.querySelectorAll('label'));
+  for(var i=0;i<labels.length;i++){
+    var text=n(labels[i].textContent);
+    var match=kind==='case'?(text==='case'||text.indexOf('case number')>=0||text.indexOf('case no')>=0):(text==='client'||text.indexOf('client name')>=0);
+    if(!match)continue;
+    var forId=labels[i].htmlFor||labels[i].getAttribute('for');
+    if(forId){var byId=document.getElementById(forId);if(byId)return byId;}
+    var p=labels[i].parentElement;
+    var f=p&&p.querySelector('input:not([type="hidden"]),select,textarea');
+    if(f)return f;
   }
   return null;
 }
-function makeReadonly(select){
-  if(!select||select.dataset.finalReadonly==='1')return;
-  var wrap=select.parentElement;
-  select.dataset.finalReadonly='1';
-  select.style.display='none';
-  select.setAttribute('aria-hidden','true');
-  var display=wrap.querySelector('[data-finance-client-display="true"]')||document.createElement('input');
-  display.type='text';
-  display.className=select.className||'';
-  display.readOnly=true;
-  display.tabIndex=-1;
-  display.placeholder='Select a case';
-  display.setAttribute('aria-label','Client name');
-  display.dataset.financeClientDisplay='true';
-  display.style.cursor='default';
-  if(!display.parentElement)wrap.appendChild(display);
+function caseText(field){
+  if(!field)return '';
+  if(field.tagName==='INPUT'||field.tagName==='TEXTAREA')return s(field.value);
+  if(field.tagName==='SELECT'){
+    var opt=field.options&&field.options[field.selectedIndex];
+    return s(field.value)||s(opt&&opt.textContent);
+  }
+  return s(field.textContent);
+}
+function findCase(field){
+  var raw=caseText(field), list=allCases();
+  if(!raw)return null;
+  var exact=list.find(function(c){return [caseId(c),caseNo(c),c.title,c.name].some(function(v){return n(v)===n(raw);});});
+  if(exact)return exact;
+  return list.find(function(c){return n(caseNo(c))===n(raw)||n(caseNo(c)).indexOf(n(raw))>=0;})||null;
 }
 function clientControls(field){
-  var wrap=field&&field.parentElement;
-  var select=field&&field.tagName==='SELECT'?field:null;
-  if(!select&&wrap)select=wrap.querySelector('select');
-  var display=field&&field.matches&&field.matches('[data-finance-client-display="true"]')?field:null;
-  if(!display&&wrap)display=wrap.querySelector('[data-finance-client-display="true"]');
-  if(!display&&field&&field.tagName==='INPUT'&&field.type!=='hidden')display=field;
-  return {wrap:wrap,select:select,display:display};
+  var p=field&&field.parentElement;
+  var hidden=p&&p.querySelector('select');
+  var display=field&&field.tagName==='INPUT'&&field.type!=='hidden'?field:null;
+  if(!display&&p)display=p.querySelector('input:not([type="hidden"])');
+  if(!display&&p)display=p.querySelector('[data-finance-client-display="true"]');
+  return {hidden:hidden,display:display};
 }
-function setDisplay(ctrl,name){
-  if(ctrl&&ctrl.display){ctrl.display.value=name||'';ctrl.display.placeholder=name?'':'Select a case';}
+function ensureReadonly(ctrl){
+  if(!ctrl||!ctrl.display)return;
+  ctrl.display.readOnly=true;
+  ctrl.display.setAttribute('aria-readonly','true');
+  ctrl.display.setAttribute('data-finance-client-display','true');
+  ctrl.display.tabIndex=-1;
+}
+function emit(el,type){try{el.dispatchEvent(new Event(type,{bubbles:true}));}catch(e){try{var ev=document.createEvent('Event');ev.initEvent(type,true,true);el.dispatchEvent(ev);}catch(_){}}}
+function clearClient(ctrl){
+  if(ctrl.hidden){ctrl.hidden.value='';ctrl.hidden.dataset.caseId='';ctrl.hidden.dataset.clientId='';}
+  if(ctrl.display){ctrl.display.value='';ctrl.display.placeholder='Select a case';ctrl.display.dataset.caseId='';ctrl.display.dataset.clientId='';ctrl.display.dataset.clientName='';}
 }
 function sync(){
-  var m=modal();if(!m)return;
-  var body=document.getElementById('modalBody')||m;
-  var cf=fieldByLabel(body,'case'),cl=fieldByLabel(body,'client');
+  if(!isInvoiceModal())return;
+  var cf=labelField('case'),cl=labelField('client');
   if(!cf||!cl)return;
-  var ctrl=clientControls(cl);
-  if(ctrl.select)makeReadonly(ctrl.select);
-  var c=selectedCase(cf);
-  if(!c){setDisplay(ctrl,'');if(ctrl.select)ctrl.select.value='';return;}
-  var client=linkedClient(c);
-  if(!client){setDisplay(ctrl,'');return;}
-  var cid=clientId(client),name=clientName(client);
-  if(ctrl.select){
-    var opt=[].slice.call(ctrl.select.options||[]).find(function(o){return norm(o.value)===norm(cid)||norm(o.textContent)===norm(name)||norm(o.value)===norm(name);});
-    if(!opt){opt=document.createElement('option');opt.value=cid||name;opt.textContent=name;ctrl.select.appendChild(opt);}
-    ctrl.select.value=opt.value;
-    ctrl.select.dataset.caseId=caseId(c);
-    ctrl.select.dataset.clientId=cid;
+  var ctrl=clientControls(cl);ensureReadonly(ctrl);
+  var c=findCase(cf);
+  if(!c){clearClient(ctrl);return;}
+  var client=relatedClient(c);
+  if(!client){
+    if(ctrl.display){ctrl.display.value='Client information not found for this case.';ctrl.display.placeholder='';}
+    return;
+  }
+  var clientName=name(client)||s(c.client);
+  var clientKey=id(client)||clientName;
+  var selectedCaseId=caseId(c);
+  if(ctrl.hidden){
+    var option=[].slice.call(ctrl.hidden.options||[]).find(function(o){return n(o.value)===n(clientKey)||n(o.textContent)===n(clientName);});
+    if(!option){option=document.createElement('option');option.value=clientKey;option.textContent=clientName;ctrl.hidden.appendChild(option);}
+    ctrl.hidden.value=option.value;
+    ctrl.hidden.dataset.caseId=selectedCaseId;
+    ctrl.hidden.dataset.clientId=id(client);
   }
   if(ctrl.display){
-    ctrl.display.value=name;
+    ctrl.display.value=clientName;
     ctrl.display.placeholder='';
-    ctrl.display.dataset.caseId=caseId(c);
-    ctrl.display.dataset.clientId=cid;
-    ctrl.display.dataset.clientName=name;
+    ctrl.display.dataset.caseId=selectedCaseId;
+    ctrl.display.dataset.clientId=id(client);
+    ctrl.display.dataset.clientName=clientName;
   }
+  var m=document.getElementById('modal');
+  if(m){m.dataset.selectedCaseId=selectedCaseId;m.dataset.selectedClientId=id(client);m.dataset.selectedCaseNumber=caseNo(c);m.dataset.selectedClientName=clientName;}
 }
+function schedule(){[0,25,100,250,500].forEach(function(ms){setTimeout(sync,ms);});}
 function init(){
-  var root=document.getElementById('modalBody')||document.body;
-  if(!root||root.dataset.financeFinalInit==='1')return;
-  root.dataset.financeFinalInit='1';
-  var run=function(){[0,60,150,300,600,1000].forEach(function(ms){setTimeout(sync,ms);});};
-  new MutationObserver(run).observe(root,{childList:true,subtree:true});
-  document.addEventListener('input',run,true);
-  document.addEventListener('change',run,true);
-  document.addEventListener('click',run,true);
-  document.addEventListener('keydown',run,true);
-  run();
+  if(window.__financeCaseClientPermanentFix)return;
+  window.__financeCaseClientPermanentFix=true;
+  document.addEventListener('input',schedule,true);
+  document.addEventListener('change',schedule,true);
+  document.addEventListener('click',schedule,true);
+  document.addEventListener('keydown',schedule,true);
+  var mo=new MutationObserver(schedule);mo.observe(document.body,{childList:true,subtree:true});
+  schedule();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
