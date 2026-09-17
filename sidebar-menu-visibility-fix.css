@@ -1,0 +1,15 @@
+/* Sidebar menu visibility fix only. No navigation or application logic changes. */
+.sidebar{
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+}
+.sidebar .brand,
+.sidebar nav,
+.sidebar-bottom{
+  flex-shrink:0;
+}
+.sidebar-bottom{
+  margin-top:20px;
+  padding-bottom:8px;
+}
