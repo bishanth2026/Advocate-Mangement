@@ -124,4 +124,35 @@
   var style = document.createElement('style');
   style.textContent = '\n    button, a, [role="button"] { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }\n    button.tap-active, button.touch-active { transform: translateY(1px); opacity: .86; }\n    @media (max-width: 900px) {\n      .sidebar { transition: transform .2s ease; }\n      .sidebar.open { transform: translateX(0); }\n      .mobile-overlay { display: none; }\n      .mobile-overlay.show { display: block; }\n    }\n  ';
   document.head.appendChild(style);
+
+  /* Phase 3 dashboard corrections. app.js loads after this file, so apply
+     the DOM correction after the initial dashboard render. */
+  function fixDashboard() {
+    var content = document.getElementById('content');
+    if (!content || !content.querySelector('.cards')) return;
+
+    var now = new Date();
+    var hour = now.getHours();
+    var greeting = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
+    var title = content.querySelector('.page-title h1');
+    if (title && /Good morning|Good afternoon|Good evening/.test(title.textContent)) {
+      title.textContent = greeting + ', Advocate';
+    }
+
+    var subtitle = content.querySelector('.page-title p');
+    if (subtitle) {
+      subtitle.textContent = now.toLocaleDateString('en-IN', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+      }) + ' • Demo Workspace';
+    }
+
+    var cards = content.querySelectorAll('.stat');
+    if (cards.length > 1 && Array.isArray(window.stateFixHearings)) {
+      cards[1].querySelector('.stat-value').textContent = window.stateFixHearings.length;
+    }
+  }
+
+  window.setTimeout(fixDashboard, 0);
+  window.setTimeout(fixDashboard, 150);
+  window.addEventListener('hashchange', function () { window.setTimeout(fixDashboard, 0); });
 })();
