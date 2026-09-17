@@ -20,3 +20,6 @@
   .modal{padding-left:6px!important;padding-right:6px!important}
   .modal-card{padding:14px!important;border-radius:18px!important}
 }
+
+/* Create New Case: remove only the redundant first court text box. */
+#modalBody input[placeholder="Type court name..."]{display:none!important}
