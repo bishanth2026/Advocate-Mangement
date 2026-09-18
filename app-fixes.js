@@ -2,9 +2,24 @@
 (function () {
   'use strict';
   if (typeof window.esc !== 'function') window.esc = function (v) {
-    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
   };
-  function data() { try { return JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {}; } catch (_) { return {}; } }
+  function data() {
+    try {
+      var stored = JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {};
+      if (!Array.isArray(stored.cases) || !stored.cases.length) {
+        stored.cases = [
+          {id:'CS-2026-001',number:'OS 145/2026',title:'Rahman v. State',client:'Abdul Rahman',court:'District Court, Kozhikode'},
+          {id:'CS-2026-002',number:'CC 88/2026',title:'Fathima v. Kareem',client:'Fathima P.',court:'JMFC Court II'},
+          {id:'CS-2026-003',number:'WP 422/2026',title:'ABC Traders v. State',client:'ABC Traders',court:'High Court of Kerala'},
+          {id:'CS-2026-004',number:'OP 71/2025',title:'Shameer v. Amina',client:'Shameer K.',court:'Family Court'}
+        ];
+      }
+      return stored;
+    } catch (_) {
+      return {cases:[]};
+    }
+  }
   function date(v) { if (!v) return null; var d = new Date(String(v).slice(0, 10) + 'T00:00:00'); return isNaN(d.getTime()) ? null : d; }
   function control(labelText, root) {
     var scope = root || document;
