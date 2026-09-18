@@ -23,6 +23,64 @@
       input.addEventListener('input', syncCourt); input.addEventListener('change', syncCourt); select.style.display = 'none'; select.dataset.courtTypeahead = '1'; select.insertAdjacentElement('afterend', input);
     });
   }
+  function readData() { try { return JSON.parse(localStorage.getItem('advocateDeskData') || 'null') || {}; } catch (e) { return {}; } }
+  function parseDate(value) {
+    if (!value) return null;
+    var d = new Date(String(value).slice(0, 10) + 'T00:00:00');
+    if (!isNaN(d.getTime())) return d;
+    d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function hidePastHearings() {
+    var table = document.getElementById('hearingTable');
+    if (!table) return;
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    table.querySelectorAll('tbody tr').forEach(function (row) {
+      var cell = row.querySelector('td');
+      if (!cell) return;
+      var date = parseDate(cell.textContent.trim());
+      if (date) row.style.display = date < today ? 'none' : '';
+    });
+  }
+  function fieldControl(labelText) {
+    var labels = Array.from(document.querySelectorAll('.modal.show label, .modal[aria-hidden="false"] label'));
+    var label = labels.find(function (x) { return x.textContent.trim().toLowerCase() === labelText.toLowerCase(); });
+    if (!label) return null;
+    var field = label.closest('.field');
+    return field ? field.querySelector('input,select,textarea') : null;
+  }
+  function enhanceHearingModal() {
+    var modal = Array.from(document.querySelectorAll('.modal.show, .modal[aria-hidden="false"]')).find(function (x) { return /Schedule Hearing|Edit Hearing/i.test(x.textContent || ''); });
+    if (!modal) return;
+    var data = readData(), cases = Array.isArray(data.cases) ? data.cases : [];
+    if (!cases.length) return;
+    var caseControl = fieldControl('Case Number');
+    if (!caseControl) return;
+    if (caseControl.tagName !== 'SELECT') {
+      var placeholder = String(caseControl.placeholder || '').toLowerCase();
+      if (!placeholder.includes('select a case') && !/select a case/i.test(caseControl.value || '')) return;
+      var select = document.createElement('select');
+      select.className = caseControl.className || 'filter';
+      select.id = caseControl.id || '';
+      select.name = caseControl.name || '';
+      caseControl.replaceWith(select);
+      caseControl = select;
+    }
+    if (caseControl.dataset.caseEnhanced !== '1') {
+      caseControl.innerHTML = '<option value="">Select a case</option>' + cases.map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.number || c.title || c.id) + '</option>'; }).join('');
+      caseControl.dataset.caseEnhanced = '1';
+      caseControl.addEventListener('change', function () { fillCase(caseControl.value); });
+    }
+    function fillCase(id) {
+      var c = cases.find(function (x) { return x.id === id || x.number === id; });
+      if (!c) return;
+      var title = fieldControl('Case Title'); if (title) title.value = c.title || '';
+      var client = fieldControl('Client'); if (client) { client.value = c.client || ''; client.readOnly = true; client.setAttribute('aria-readonly', 'true'); }
+      var court = fieldControl('Court'); if (court) { court.value = c.court || ''; if (court.tagName === 'SELECT') { var option = Array.from(court.options).find(function (o) { return o.value === c.court || o.text.trim() === c.court; }); if (option) court.value = option.value; } }
+      var hidden = modal.querySelector('input[name="caseId"],input[data-case-id]'); if (hidden) hidden.value = c.id;
+    }
+    if (caseControl.value) fillCase(caseControl.value);
+  }
   document.addEventListener('click', function (event) {
     var item = event.target.closest && event.target.closest('[data-page]');
     if (item && !item.disabled) { item.classList.add('tap-active'); window.setTimeout(function () { item.classList.remove('tap-active'); }, 180); closeMobileNav(); }
@@ -33,25 +91,8 @@
   document.addEventListener('touchstart', function (event) { var target = event.target.closest && event.target.closest('button, a, [role="button"]'); if (target) target.classList.add('touch-active'); }, { passive: true });
   document.addEventListener('touchend', function (event) { var target = event.target.closest && event.target.closest('button, a, [role="button"]'); if (target) target.classList.remove('touch-active'); }, { passive: true });
   window.addEventListener('error', function (event) { console.error('[AdvocateDesk]', event.error || event.message); });
-  var observer = new MutationObserver(function () { makeCourtTypeahead(); }); observer.observe(document.documentElement, { childList: true, subtree: true }); makeCourtTypeahead();
+  var observer = new MutationObserver(function () { makeCourtTypeahead(); hidePastHearings(); enhanceHearingModal(); });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  makeCourtTypeahead(); hidePastHearings(); enhanceHearingModal();
   var style = document.createElement('style'); style.textContent = 'button,a,[role="button"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}button.tap-active,button.touch-active{transform:translateY(1px);opacity:.86}@media(max-width:900px){.sidebar{transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:none}.mobile-overlay.show{display:block}}'; document.head.appendChild(style);
-
-  function parseDate(value) { if (!value) return null; var text = String(value).trim(); var date = new Date(text.slice(0, 10) + 'T00:00:00'); if (!isNaN(date.getTime())) return date; date = new Date(text); return isNaN(date.getTime()) ? null : date; }
-  function getHearings() { try { var stored = JSON.parse(localStorage.getItem('advocateDeskData') || 'null'); return stored && Array.isArray(stored.hearings) ? stored.hearings : []; } catch (error) { return []; } }
-  function fixDashboard() {
-    var content = document.getElementById('content'); if (!content || !content.querySelector('.cards')) return;
-    var now = new Date(), hour = now.getHours(), greeting = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
-    var title = content.querySelector('.page-title h1'); if (title && /Good morning|Good afternoon|Good evening/.test(title.textContent)) title.textContent = greeting + ', Advocate';
-    var subtitle = content.querySelector('.page-title p'); if (subtitle) subtitle.textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' • Demo Workspace';
-    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate()), end = new Date(start); end.setDate(end.getDate() + 30);
-    var upcoming = getHearings().filter(function (hearing) { var date = parseDate(hearing && hearing.date); return date && date >= start && date <= end; });
-    if (!upcoming.length) {
-      var panel = Array.from(content.querySelectorAll('.panel')).find(function (node) { return /Upcoming Hearings/i.test(node.textContent || ''); });
-      if (panel) { var rows = panel.querySelectorAll('.list-row'); if (rows.length) upcoming = new Array(rows.length).fill({}); }
-    }
-    var cards = content.querySelectorAll('.stat'); if (cards.length > 1) { var value = cards[1].querySelector('.stat-value'); if (value) value.textContent = upcoming.length; }
-  }
-  var dashboardObserver = new MutationObserver(function () { window.setTimeout(fixDashboard, 0); }); dashboardObserver.observe(document.getElementById('content') || document.body, { childList: true, subtree: true });
-  [0, 250, 800].forEach(function (delay) { window.setTimeout(fixDashboard, delay); });
-  window.addEventListener('hashchange', function () { window.setTimeout(fixDashboard, 0); });
 })();
