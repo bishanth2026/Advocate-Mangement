@@ -7,27 +7,31 @@
   function data() {
     try {
       var stored = JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {};
-      if (!Array.isArray(stored.cases) || !stored.cases.length) {
-        stored.cases = [
-          {id:'CS-2026-001',number:'OS 145/2026',title:'Rahman v. State',client:'Abdul Rahman',court:'District Court, Kozhikode'},
-          {id:'CS-2026-002',number:'CC 88/2026',title:'Fathima v. Kareem',client:'Fathima P.',court:'JMFC Court II'},
-          {id:'CS-2026-003',number:'WP 422/2026',title:'ABC Traders v. State',client:'ABC Traders',court:'High Court of Kerala'},
-          {id:'CS-2026-004',number:'OP 71/2025',title:'Shameer v. Amina',client:'Shameer K.',court:'Family Court'}
-        ];
-      }
+      if (!Array.isArray(stored.cases) || !stored.cases.length) stored.cases = [
+        {id:'CS-2026-001',number:'OS 145/2026',title:'Rahman v. State',client:'Abdul Rahman',court:'District Court, Kozhikode'},
+        {id:'CS-2026-002',number:'CC 88/2026',title:'Fathima v. Kareem',client:'Fathima P.',court:'JMFC Court II'},
+        {id:'CS-2026-003',number:'WP 422/2026',title:'ABC Traders v. State',client:'ABC Traders',court:'High Court of Kerala'},
+        {id:'CS-2026-004',number:'OP 71/2025',title:'Shameer v. Amina',client:'Shameer K.',court:'Family Court'}
+      ];
       return stored;
-    } catch (_) {
-      return {cases:[]};
-    }
+    } catch (_) { return {cases:[]}; }
   }
   function date(v) { if (!v) return null; var d = new Date(String(v).slice(0, 10) + 'T00:00:00'); return isNaN(d.getTime()) ? null : d; }
+  function norm(v) { return String(v || '').replace(/[*:\n\r\t]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase(); }
   function control(labelText, root) {
-    var scope = root || document;
+    var scope = root || document, wanted = norm(labelText);
     var labels = Array.from(scope.querySelectorAll('label'));
-    var label = labels.find(function (l) { return l.textContent.replace(/\*/g, '').trim().toLowerCase() === labelText.toLowerCase(); });
-    if (!label) return null;
-    var field = label.closest('.field') || label.parentElement;
-    return field ? field.querySelector('input,select,textarea') : null;
+    var label = labels.find(function (l) { return norm(l.textContent) === wanted || norm(l.textContent).indexOf(wanted) === 0; });
+    if (label) {
+      var field = label.closest('.field') || label.parentElement;
+      var found = field && field.querySelector('input,select,textarea');
+      if (found) return found;
+      if (label.htmlFor) { found = document.getElementById(label.htmlFor); if (found) return found; }
+    }
+    var candidates = Array.from(scope.querySelectorAll('input,select,textarea'));
+    return candidates.find(function (el) {
+      return norm(el.getAttribute('aria-label')) === wanted || norm(el.getAttribute('placeholder')) === wanted;
+    }) || null;
   }
   function fillHearingCase(modal, id) {
     var list = Array.isArray(data().cases) ? data().cases : [];
@@ -36,7 +40,11 @@
     var title = control('Case Title', modal), client = control('Client', modal), court = control('Court', modal);
     function set(el, value, readonly) {
       if (!el) return;
-      el.value = value || '';
+      var next = value || '';
+      try {
+        var setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value');
+        if (setter && setter.set) setter.set.call(el, next); else el.value = next;
+      } catch (_) { el.value = next; }
       if (readonly) { el.readOnly = true; el.setAttribute('aria-readonly', 'true'); }
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -81,7 +89,11 @@
       select.addEventListener('click', function () { window.setTimeout(apply, 0); });
       select.dataset.autofillBound = '1';
     }
-    if (select.value) { fillHearingCase(modal, select.value); window.setTimeout(function () { fillHearingCase(modal, select.value); }, 80); }
+    if (select.value) {
+      fillHearingCase(modal, select.value);
+      window.setTimeout(function () { fillHearingCase(modal, select.value); }, 80);
+      window.setTimeout(function () { fillHearingCase(modal, select.value); }, 250);
+    }
   }
   function hidePast() {
     var table = document.getElementById('hearingTable'); if (!table) return;
