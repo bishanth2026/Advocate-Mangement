@@ -5,9 +5,8 @@
     return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
   };
   function data() {
-    try {
-      return JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {};
-    } catch (_) { return {}; }
+    try { return JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {}; }
+    catch (_) { return {}; }
   }
   function date(v) { if (!v) return null; var d = new Date(String(v).slice(0, 10) + 'T00:00:00'); return isNaN(d.getTime()) ? null : d; }
   function norm(v) { return String(v || '').replace(/[*:\n\r\t]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase(); }
@@ -34,7 +33,7 @@
   }
   function setValue(el, value, readonly) {
     if (!el) return;
-    var next = value || '';
+    var next = value == null ? '' : String(value);
     try {
       var setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value');
       if (setter && setter.set) setter.set.call(el, next); else el.value = next;
@@ -47,10 +46,20 @@
     var all = data(), list = Array.isArray(all.cases) ? all.cases : [];
     var c = list.find(function (x) { return String(x.id) === String(id) || String(x.number) === String(id); });
     if (!c) return;
-    setValue(control('Case Title', modal), c.title || '', false);
-    setValue(control('Client', modal), caseClient(c, all), true);
-    setValue(control('Court', modal), c.court || '', false);
-    setValue(control('Stage', modal), c.stage || '', false);
+
+    /* The hearing form uses stable IDs. Prefer them so the auto-fill does not
+       depend on label matching or on the search input replacing the select. */
+    var title = modal.querySelector('#f4') || control('Case Title', modal);
+    var clientInput = modal.querySelector('#fClient') || control('Client', modal);
+    var court = modal.querySelector('#f5') || control('Court', modal);
+    var stage = modal.querySelector('#f6') || control('Stage', modal);
+    var clientName = caseClient(c, all);
+
+    setValue(title, c.title || '', false);
+    setValue(clientInput, clientName, true);
+    setValue(court, c.court || '', false);
+    setValue(stage, c.stage || '', false);
+
     var hidden = modal.querySelector('input[name="caseId"], input[data-case-id]');
     if (!hidden) {
       hidden = document.createElement('input');
@@ -86,7 +95,6 @@
     menu.className = 'adv-case-menu';
     menu.style.cssText = 'display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:260px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.18);z-index:10060;';
     wrap.appendChild(menu);
-    var selectedId = '';
     function label(c) { return (c.number || c.title || c.id || '') + (c.client ? ' — ' + c.client : ''); }
     function close() { menu.style.display = 'none'; original.setAttribute('aria-expanded', 'false'); }
     function render(query) {
@@ -103,14 +111,14 @@
     function choose(id) {
       var c = cases.find(function (x) { return String(x.id) === String(id) || String(x.number) === String(id); });
       if (!c) return;
-      selectedId = c.id || c.number;
       original.value = label(c);
-      original.dataset.caseId = selectedId;
-      fillHearingCase(modal, selectedId);
+      original.dataset.caseId = c.id || c.number;
+      fillHearingCase(modal, c.id || c.number);
       close();
     }
     original.addEventListener('focus', function () { render(original.value); });
-    original.addEventListener('input', function () { selectedId = ''; original.dataset.caseId = ''; render(original.value); });
+    original.addEventListener('click', function () { render(original.value); });
+    original.addEventListener('input', function () { original.dataset.caseId = ''; render(original.value); });
     original.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') close();
       if (e.key === 'ArrowDown') { e.preventDefault(); var first = menu.querySelector('.adv-case-option'); if (first) first.focus(); }
@@ -120,7 +128,7 @@
       if (option) choose(option.getAttribute('data-case-id'));
     });
     document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) close(); }, true);
-    var existing = cases.find(function (c) { return String(c.id) === String(original.value) || String(c.number) === String(original.value) || String(c.id) === String(original.dataset.caseId); });
+    var existing = cases.find(function (c) { return String(c.id) === String(original.dataset.caseId) || String(c.number) === String(original.value); });
     if (existing) choose(existing.id || existing.number);
   }
   function hidePast() {
