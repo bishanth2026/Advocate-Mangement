@@ -33,8 +33,14 @@
       return norm(el.getAttribute('aria-label')) === wanted || norm(el.getAttribute('placeholder')) === wanted;
     }) || null;
   }
+  function caseClient(c, all) {
+    var ids = Array.isArray(c.clientIds) ? c.clientIds : (c.clientId ? [c.clientId] : []);
+    var clients = all && Array.isArray(all.clients) ? all.clients : [];
+    var linked = clients.find(function (x) { return ids.indexOf(x.id) !== -1; });
+    return c.client || (linked && linked.name) || '';
+  }
   function fillHearingCase(modal, id) {
-    var list = Array.isArray(data().cases) ? data().cases : [];
+    var all = data(), list = Array.isArray(all.cases) ? all.cases : [];
     var c = list.find(function (x) { return String(x.id) === String(id) || String(x.number) === String(id); });
     if (!c) return;
     var title = control('Case Title', modal), client = control('Client', modal), court = control('Court', modal);
@@ -50,7 +56,7 @@
       el.dispatchEvent(new Event('change', { bubbles: true }));
     }
     set(title, c.title, false);
-    set(client, c.client, true);
+    set(client, caseClient(c, all), true);
     set(court, c.court, false);
     var hidden = modal.querySelector('input[name="caseId"], input[data-case-id]');
     if (hidden) hidden.value = c.id;
@@ -60,21 +66,25 @@
       return (m.offsetWidth || m.offsetHeight || m.getClientRects().length) && /Schedule Hearing|Edit Hearing/i.test(m.textContent || '');
     });
     if (!modal) return;
-    var cases = Array.isArray(data().cases) ? data().cases : [];
+    var all = data(), cases = Array.isArray(all.cases) ? all.cases : [];
     if (!cases.length) return;
     var original = control('Case Number', modal);
     if (!original) return;
     var select = original;
-    if (select.tagName !== 'SELECT' || select.dataset.advocateCaseSelect !== '1') {
-      var previous = original.value || '';
-      if (original.tagName !== 'SELECT') {
-        select = document.createElement('select');
-        select.className = original.className || '';
-        select.name = original.name || 'caseId';
-        select.id = original.id || '';
-        select.required = original.required;
-        original.replaceWith(select);
-      }
+    var previous = original.value || '';
+    if (select.tagName !== 'SELECT') {
+      select = document.createElement('select');
+      select.className = original.className || '';
+      select.name = original.name || 'caseId';
+      select.id = original.id || '';
+      select.required = original.required;
+      original.replaceWith(select);
+    }
+    select.disabled = false;
+    select.style.pointerEvents = 'auto';
+    select.style.cursor = 'pointer';
+    var needsOptions = select.dataset.advocateCaseSelect !== '1' || select.options.length !== cases.length + 1 || !Array.from(select.options).some(function (o) { return o.value === String(cases[0].id); });
+    if (needsOptions) {
       select.dataset.advocateCaseSelect = '1';
       select.innerHTML = '<option value="">Select a case</option>' + cases.map(function (c) {
         return '<option value="' + esc(c.id) + '">' + esc((c.number || c.title || c.id) + (c.client ? ' — ' + c.client : '')) + '</option>';
