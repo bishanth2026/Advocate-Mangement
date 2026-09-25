@@ -47,12 +47,10 @@
     var c = list.find(function (x) { return String(x.id) === String(id) || String(x.number) === String(id); });
     if (!c) return;
 
-    /* The hearing form uses stable IDs. Prefer them so the auto-fill does not
-       depend on label matching or on the search input replacing the select. */
-    var title = modal.querySelector('#f4') || control('Case Title', modal);
-    var clientInput = modal.querySelector('#fClient') || control('Client', modal);
-    var court = modal.querySelector('#f5') || control('Court', modal);
-    var stage = modal.querySelector('#f6') || control('Stage', modal);
+    var title = control('Case Title', modal) || modal.querySelector('#f4');
+    var clientInput = control('Client', modal) || modal.querySelector('#fClient');
+    var court = control('Court', modal) || modal.querySelector('#f5');
+    var stage = control('Stage', modal) || modal.querySelector('#f6');
     var clientName = caseClient(c, all);
 
     setValue(title, c.title || '', false);
@@ -68,6 +66,12 @@
       modal.appendChild(hidden);
     }
     hidden.value = c.id || '';
+    modal.dataset.advocateSelectedCaseId = c.id || c.number || '';
+  }
+  function delayedFill(modal, id) {
+    [0, 30, 120, 350, 800].forEach(function (delay) {
+      window.setTimeout(function () { fillHearingCase(modal, id); }, delay);
+    });
   }
   function enhanceHearing() {
     var modal = Array.from(document.querySelectorAll('.modal,[role="dialog"]')).find(function (m) {
@@ -77,7 +81,11 @@
     var all = data(), cases = Array.isArray(all.cases) ? all.cases : [];
     var original = control('Case Number', modal);
     if (!original || !cases.length) return;
-    if (original.dataset.advocateSearchReady === '1') return;
+    if (original.dataset.advocateSearchReady === '1') {
+      var selectedId = original.dataset.caseId || modal.dataset.advocateSelectedCaseId;
+      if (selectedId) delayedFill(modal, selectedId);
+      return;
+    }
     original.dataset.advocateSearchReady = '1';
     var wrap = document.createElement('div');
     wrap.className = 'adv-case-search';
@@ -113,12 +121,13 @@
       if (!c) return;
       original.value = label(c);
       original.dataset.caseId = c.id || c.number;
-      fillHearingCase(modal, c.id || c.number);
+      modal.dataset.advocateSelectedCaseId = c.id || c.number;
+      delayedFill(modal, c.id || c.number);
       close();
     }
     original.addEventListener('focus', function () { render(original.value); });
     original.addEventListener('click', function () { render(original.value); });
-    original.addEventListener('input', function () { original.dataset.caseId = ''; render(original.value); });
+    original.addEventListener('input', function () { original.dataset.caseId = ''; modal.dataset.advocateSelectedCaseId = ''; render(original.value); });
     original.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') close();
       if (e.key === 'ArrowDown') { e.preventDefault(); var first = menu.querySelector('.adv-case-option'); if (first) first.focus(); }
