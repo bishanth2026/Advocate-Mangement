@@ -470,7 +470,7 @@ function openModal(type){
  case:`<div class="form-grid"><div class="field"><label>Case Type</label><select id="f6" onchange="toggleCivilCategory()"><option>Civil</option><option>Criminal</option><option>Writ</option><option>Family</option></select></div><div class="field" id="civilCategoryWrap"><label>Civil Case Category</label><select id="f7"><option value="OS">OS</option><option value="OP">OP</option></select></div><div class="field" id="criminalCategoryWrap" style="display:none"><label>Criminal Case Category</label><select id="f10"><option value="CC">CC</option><option value="CP">CP</option><option value="ST">ST</option><option value="MC">MC</option></select></div><div class="field full"><label>Case Number / Year</label><input id="f11" placeholder="123/2026"></div><div class="field"><label>Clients / Parties</label><select id="f2" multiple size="4" title="Hold Ctrl to select multiple clients"><option value="">Select clients</option>${state.clients.map(c=>`<option value="${c.id}">${c.name} (${c.id}) — ${c.role||"Party"}</option>`).join("")}</select><small class="muted">Select one or more clients/parties.</small></div><div class="field full"><label>Case Title</label><input id="f1" placeholder="Party v. Party"></div><div class="field"><label>Court</label><select id="f3">${courtOptions("")}</select></div><div class="field"><label>Next Hearing Date</label><input id="f4" type="date"></div><div class="field"><label>Hearing Time</label><input id="f5" type="time"></div><div class="field"><label>Status</label><select id="f9"><option>Active</option><option>Pending</option><option>Reserved</option><option>Disposed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('case')">Save &amp; Send WhatsApp</button></div>`,
  client:`<div class="form-grid"><div class="field"><label>Client Name</label><input id="f1" placeholder="Full client name" required></div><div class="field"><label>Client Role</label><select id="fRole"><option>Petitioner</option><option>Respondent</option><option>Victim</option><option>Applicant</option><option>Accused</option><option>Witness</option><option>Other</option></select></div><div class="field"><label>Phone / WhatsApp</label><input id="f2" type="tel" placeholder="Mobile number"></div><div class="field"><label>Email</label><input id="f3" type="email" placeholder="Email address"></div><div class="field"><label>Status</label><select id="f4"><option>Active</option><option>Inactive</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('client')">Save Client</button></div>`,
 
- hearing:`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date"></div><div class="field"><label>Time</label><input id="f2" type="time"></div><div class="field"><label>Case Number</label><select id="f3" onchange="syncHearingCase()"><option value="">Select a case</option>${state.cases.map(c=>`<option value="${c.id}">${c.number} — ${c.client}</option>`).join("")}</select></div><div class="field"><label>Case Title</label><input id="f4" readonly></div><div class="field"><label>Client</label><input id="fClient" readonly placeholder="Selected from case"></div><div class="field full"><label>Court</label><input id="f5" placeholder="Court name"></div><div class="field"><label>Stage</label><input id="f6" placeholder="Evidence / Arguments"></div></div><div class="notice" style="margin-top:14px">When you schedule this hearing, WhatsApp will open with the hearing details prepared for the selected client.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('hearing')">Schedule & WhatsApp</button></div>`,
+ hearing:`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date"></div><div class="field"><label>Time</label><input id="f2" type="time"></div><div class="field"><label>Case Number</label><input id="f3" type="text" list="hearingCaseOptions" autocomplete="off" placeholder="Search case number, title, client or court" onchange="syncHearingCase()" oninput="syncHearingCase()"><datalist id="hearingCaseOptions">${state.cases.map(c=>`<option value="${esc(c.number)} — ${esc(c.title||c.client||'Untitled case')}"></option>`).join("")}</datalist><input id="f3CaseId" type="hidden"></div><div class="field"><label>Case Title</label><input id="f4" readonly></div><div class="field"><label>Client</label><input id="fClient" readonly placeholder="Selected from case"></div><div class="field full"><label>Court</label><input id="f5" placeholder="Court name"></div><div class="field"><label>Stage</label><input id="f6" placeholder="Evidence / Arguments"></div></div><div class="notice" style="margin-top:14px">When you schedule this hearing, WhatsApp will open with the hearing details prepared for the selected client.</div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('hearing')">Schedule & WhatsApp</button></div>`,
  task:`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1"></div><div class="field"><label>Case</label><input id="f2"></div><div class="field"><label>Due Date</label><input id="f3" type="date"></div><div class="field"><label>Priority</label><select id="f4"><option>High</option><option>Medium</option><option>Low</option></select></div><div class="field"><label>Status</label><select id="f5"><option>Pending</option><option>In Progress</option><option>Completed</option></select></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('task')">Save Task</button></div>`,
  discussion:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1">${state.clients.map(c=>`<option value="${esc(c.id)}" ${c.id===window.clientManagementSelectedId?'selected':''}>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Date</label><input id="f2" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field full"><label>Discussion Subject</label><input id="f3" placeholder="e.g. Case strategy discussion"></div><div class="field full"><label>Discussion Details</label><textarea id="f4" placeholder="Record what was discussed, client instructions, documents requested, etc."></textarea></div><div class="field full"><label>Next Action / Follow-up</label><textarea id="f5" placeholder="Next steps or follow-up required"></textarea></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('discussion')">Save Discussion</button></div>`,
  payment:`<div class="form-grid"><div class="field"><label>Client</label><select id="f1" onchange="refreshPaymentInvoices()">${(()=>{const names=[...new Set([...(Array.isArray(state.clients)?state.clients:[]).map(c=>c.name),...(Array.isArray(state.invoices)?state.invoices:[]).map(i=>i.client)])].filter(Boolean).sort((a,b)=>String(a).localeCompare(String(b)));return names.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join("");})()}</select></div><div class="field"><label>Invoice</label><select id="f2"></select></div><div class="field"><label>Payment Date</label><input id="f3" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>Payment Amount</label><input id="f4" type="number" min="0" value="0"></div><div class="field"><label>Payment Method</label><select id="f5"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Other</option></select></div><div class="field full"><label>Reference / Notes</label><input id="f6" placeholder="Transaction reference or notes"></div></div><div class="form-actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addRecord('payment')">Save Payment</button></div>`,
@@ -507,7 +507,7 @@ function openEditModal(type,index){
  } else if(type==='hearing'){
   const relatedCase=state.cases.find(c=>c.number===item.case || c.id===item.case || c.id===item.caseId);
   const caseId=relatedCase?relatedCase.id:'';
-  form=`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date" value="${esc(item.date)}"></div><div class="field"><label>Time</label><input id="f2" type="text" value="${esc(item.time)}" placeholder="10:30 AM"></div><div class="field"><label>Case Number</label><select id="f3" onchange="syncHearingCase()"><option value="">Select a case</option>${state.cases.map(c=>`<option value="${esc(c.id)}" ${c.id===caseId?'selected':''}>${esc(c.number)} — ${esc(c.client)}</option>`).join("")}</select></div><div class="field"><label>Case Title</label><input id="f4" readonly value="${esc(item.title)}"></div><div class="field"><label>Client</label><input id="fClient" readonly></div><div class="field full"><label>Court</label><input id="f5" value="${esc(item.court)}"></div><div class="field"><label>Stage</label><input id="f6" value="${esc(item.stage)}"></div></div>`;
+  form=`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date" value="${esc(item.date)}"></div><div class="field"><label>Time</label><input id="f2" type="text" value="${esc(item.time)}" placeholder="10:30 AM"></div><div class="field"><label>Case Number</label><input id="f3" type="text" list="hearingCaseOptions" autocomplete="off" value="${esc(relatedCase?((relatedCase.number||"")+" — "+(relatedCase.title||relatedCase.client||"Untitled case")):item.case||"")}" onchange="syncHearingCase()" oninput="syncHearingCase()"><datalist id="hearingCaseOptions">${state.cases.map(c=>`<option value="${esc(c.number)} — ${esc(c.title||c.client||"Untitled case")}"></option>`).join("")}</datalist><input id="f3CaseId" type="hidden" value="${esc(caseId)}"></div><div class="field"><label>Case Title</label><input id="f4" readonly value="${esc(item.title)}"></div><div class="field"><label>Client</label><input id="fClient" readonly></div><div class="field full"><label>Court</label><input id="f5" value="${esc(item.court)}"></div><div class="field"><label>Stage</label><input id="f6" value="${esc(item.stage)}"></div></div>`;
  } else if(type==='task'){
   form=`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1" value="${esc(item.title)}"></div><div class="field"><label>Case</label><input id="f2" value="${esc(item.case)}"></div><div class="field"><label>Due Date</label><input id="f3" type="date" value="${esc(item.due)}"></div><div class="field"><label>Priority</label><select id="f4">${['High','Medium','Low'].map(x=>`<option ${x===item.priority?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="f5">${['Pending','In Progress','Completed'].map(x=>`<option ${x===item.status?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
  } else if(type==='discussion'){
@@ -543,7 +543,8 @@ function updateRecord(type,index){
   if(oldNumber!==item.number){state.hearings.forEach(h=>{if(h.case===oldNumber) h.case=item.number;});state.tasks.forEach(t=>{if(t.case===oldNumber)t.case=item.number;});}
   state.clients.forEach(c=>{c.cases=state.cases.filter(x=>(Array.isArray(x.clientIds)?x.clientIds.includes(c.id):x.clientId===c.id)||x.client===c.name||(x.clients||[]).includes(c.name)).length;});
  } else if(type==='hearing'){
-  const relatedCase=state.cases.find(c=>c.id===document.getElementById('f3').value); if(!relatedCase){alert('Please select a case.');return;}
+  const selectedCaseId=(document.getElementById('f3CaseId')||{}).value||"";
+  const relatedCase=state.cases.find(c=>c.id===selectedCaseId); if(!relatedCase){alert('Please select a case.');return;}
   const client=getHearingClient({clientId:relatedCase.clientId,case:relatedCase.number}); if(!client){alert('The selected case is not linked to a client.');return;}
   item.date=document.getElementById('f1').value||item.date; item.time=document.getElementById('f2').value||item.time; item.case=relatedCase.number; item.title=relatedCase.title; item.court=document.getElementById('f5').value.trim()||relatedCase.court||'Court'; item.stage=document.getElementById('f6').value.trim()||'Hearing'; item.clientId=client.id;
  } else if(type==='task'){
@@ -569,16 +570,37 @@ function deleteRecord(type,index){
  navigate('client-management');
 }
 function syncHearingCase(){
-  const select=document.getElementById("f3");
-  const relatedCase=state.cases.find(c=>c.id===select.value);
+  const input=document.getElementById("f3");
+  const hidden=document.getElementById("f3CaseId");
   const title=document.getElementById("f4");
   const clientInput=document.getElementById("fClient");
   const court=document.getElementById("f5");
-  if(!relatedCase){if(title)title.value="";if(clientInput)clientInput.value="";return;}
+  const stage=document.getElementById("f6");
+  if(!input) return;
+  const raw=String(input.value||"").trim();
+  const hiddenId=hidden?String(hidden.value||"").trim():"";
+  const relatedCase=state.cases.find(c=>{
+    const label=`${c.number||""} — ${c.title||c.client||"Untitled case"}`.trim();
+    return (hiddenId && String(c.id)===hiddenId) ||
+      String(c.id||"")===raw ||
+      String(c.number||"")===raw ||
+      label.toLowerCase()===raw.toLowerCase();
+  });
+  if(!relatedCase){
+    if(hidden) hidden.value="";
+    if(title) title.value="";
+    if(clientInput) clientInput.value="";
+    if(court) court.value="";
+    if(stage) stage.value="";
+    return;
+  }
+  if(hidden) hidden.value=relatedCase.id||"";
+  if(input.value!==`${relatedCase.number||""} — ${relatedCase.title||relatedCase.client||"Untitled case"}`) input.value=`${relatedCase.number||""} — ${relatedCase.title||relatedCase.client||"Untitled case"}`;
   const client=getHearingClient({clientId:relatedCase.clientId,case:relatedCase.number});
-  if(title)title.value=relatedCase.title||"";
-  if(clientInput)clientInput.value=client?`${client.name}${client.phone?` — ${client.phone}`:""}`:"No client linked";
-  if(court && !court.value) court.value=relatedCase.court||"";
+  if(title) title.value=relatedCase.title||"";
+  if(clientInput) clientInput.value=client?`${client.name}${client.phone?` — ${client.phone}`:""}`:(relatedCase.client||"No client linked");
+  if(court) court.value=relatedCase.court||"";
+  if(stage) stage.value=relatedCase.stage||stage.value||"";
 }
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
 function toggleEditCaseCategory(){const t=document.getElementById('f6');const w=document.getElementById('editCivilCategoryWrap');const cw=document.getElementById('editCriminalCategoryWrap');if(t&&w)w.style.display=t.value==='Civil'?'':'none';if(t&&cw)cw.style.display=t.value==='Criminal'?'':'none';}
@@ -595,7 +617,7 @@ function addRecord(type){
 if(type==="invoice"){ const advocateFee=Number(document.getElementById("f3").value||0); const clerkFee=Number(document.getElementById("f4").value||0); const courtFees=Number(document.getElementById("f5").value||0); const otherCharges=Number(document.getElementById("f6").value||0); const amount=advocateFee+clerkFee+courtFees+otherCharges; const paidAmount=Number(document.getElementById("f7").value||0); state.invoices.unshift({id:"INV-"+String(Date.now()).slice(-5),date:document.getElementById("f8").value||new Date().toISOString().slice(0,10),client:document.getElementById("f1").value,case:document.getElementById("f2").value,advocateFee,clerkFee,courtFees,otherCharges,amount,paid:paidAmount,status:document.getElementById("f9").value}); save(); closeModal(); navigate("finance"); return; }
  if(type==="client"){state.clients.unshift({id:"CL-"+String(Date.now()).slice(-5),name:document.getElementById("f1").value||"New Client",phone:document.getElementById("f2").value||"—",email:document.getElementById("f3").value||"—",role:document.getElementById("fRole").value||"Petitioner",cases:0,status:document.getElementById("f4").value})}
  if(type==="hearing"){
-  const selectedCaseId=document.getElementById("f3").value;
+  const selectedCaseId=(document.getElementById("f3CaseId")||{}).value||"";
   const relatedCase=state.cases.find(c=>c.id===selectedCaseId);
   if(!relatedCase){alert("Please select a case.");return;}
   const client=getHearingClient({clientId:relatedCase.clientId,case:relatedCase.number});
@@ -649,7 +671,12 @@ document.querySelector(".user-chip").addEventListener("click",()=>ADAuth.logout(
   function setCaseContext(){
     const c=activeCase(); if(!c) return;
     const caseSelect=document.getElementById('f3');
-    if(caseSelect && caseSelect.tagName==='SELECT' && [...caseSelect.options].some(o=>o.value===c.id)){
+    const caseHidden=document.getElementById('f3CaseId');
+    if(caseSelect && caseSelect.tagName==='INPUT' && caseHidden){
+      caseSelect.value=`${c.number||""} — ${c.title||c.client||"Untitled case"}`;
+      caseHidden.value=c.id||"";
+      if(typeof syncHearingCase==='function') syncHearingCase();
+    } else if(caseSelect && caseSelect.tagName==='SELECT' && [...caseSelect.options].some(o=>o.value===c.id)){
       caseSelect.value=c.id;
       if(typeof syncHearingCase==='function') syncHearingCase();
     }
