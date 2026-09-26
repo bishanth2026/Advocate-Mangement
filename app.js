@@ -859,7 +859,7 @@ function caseDetails360Enhanced(query="", selectedId="") {
       ${section("Documents",btn("Open Documents","navigate('documents')"),`<div class="empty">Documents for this case can be opened and managed from the Documents module. Case ID: ${escv(active.id)}</div>`)}
     </div>`;
   }
-  content.innerHTML=layout("Case 360°","Everything about your case, connected in one place.")+`<div class="panel"><div class="panel-body" style="padding:16px"><div class="toolbar" style="margin:0"><input class="filter" id="caseDetailsSearch" value="${escv(query)}" placeholder="Search case number, client name, phone, title or court..." oninput="caseDetails360LiveSearch(this.value)" onkeydown="if(event.key==='Enter'){caseDetails360Search(this.value)}"><button class="primary" onclick="caseDetails360Search(document.getElementById('caseDetailsSearch').value)">Search</button></div></div></div><div class="case360-layout"><div id="case360Matches"><h3>Matching Cases (${matches.length})</h3>${matches.map(c=>`<button class="case360-result" onclick="caseDetails360Enhanced(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${escv(c.number||"No case number")}</strong><span>${escv(c.title||"Untitled case")}</span><small>${escv(c.court||"No court")} • ${escv(c.client||"No client")}</small></button>`).join("")||`<div class="empty">No matching cases.</div>`}</div><div>${workspace}</div></div>`;
+  content.innerHTML=layout("Case 360°","Everything about your case, connected in one place.")+`<div class="panel"><div class="panel-body" style="padding:16px"><div class="toolbar case360-search-toolbar" style="margin:0"><div class="case360-search-wrap"><input class="filter" id="caseDetailsSearch" value="${escv(query)}" autocomplete="off" placeholder="Search case number, client name, phone, title or court..." oninput="caseDetails360LiveSearch(this.value);case360SearchSuggestions(this.value)" onfocus="case360SearchSuggestions(this.value)" onkeydown="if(event.key==='Enter'){caseDetails360Search(this.value)}"><div id="case360SearchSuggestions" class="case360-search-suggestions" style="display:none"></div></div><button class="primary" onclick="caseDetails360Search(document.getElementById('caseDetailsSearch').value)">Search</button></div></div></div>`<div class="case360-layout"><div id="case360Matches"><h3>Matching Cases (${matches.length})</h3>${matches.map(c=>`<button class="case360-result" onclick="caseDetails360Enhanced(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${escv(c.number||"No case number")}</strong><span>${escv(c.title||"Untitled case")}</span><small>${escv(c.court||"No court")} • ${escv(c.client||"No client")}</small></button>`).join("")||`<div class="empty">No matching cases.</div>`}</div><div>${workspace}</div></div>`;
 }
 function caseDetails360LiveSearch(value){
   const host=document.getElementById("case360Matches");
@@ -874,7 +874,35 @@ function caseDetails360LiveSearch(value){
   host.innerHTML=`<h3>Matching Cases (${matches.length})</h3>`+(matches.map(c=>`<button class="case360-result" onclick="caseDetails360Enhanced(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${escv(c.number||"No case number")}</strong><span>${escv(c.title||"Untitled case")}</span><small>${escv(c.court||"No court")} • ${escv(c.client||"No client")}</small></button>`).join("")||`<div class="empty">No matching cases.</div>`);
 }
 
+function case360SearchSuggestions(value){
+  const popup=document.getElementById("case360SearchSuggestions");
+  if(!popup)return;
+  const q=String(value||"").trim().toLowerCase();
+  if(!q){popup.innerHTML="";popup.style.display="none";return;}
+  const clients=Array.isArray(state.clients)?state.clients:[];
+  const casesList=Array.isArray(state.cases)?state.cases:[];
+  const norm=v=>String(v??"").toLowerCase();
+  const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
+  const matches=casesList.filter(c=>[c.number,c.title,c.court,c.type,c.status,c.client,c.cnr,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q)))).slice(0,8);
+  popup.innerHTML=matches.length?matches.map(c=>{
+    const party=linked(c)[0];
+    const secondary=[c.title,c.court,party&&party.name].filter(Boolean).join(" • ");
+    return "<button type=\"button\" class=\"case360-suggestion\" data-case-id=\""+esc(c.id||"")+"\"><strong>"+esc(c.number||"No case number")+"</strong><span>"+esc(secondary||"Case")+"</span></button>";
+  }).join(""):"<div class=\"case360-suggestion-empty\">No matching case found.</div>";
+  popup.style.display="block";
+  popup.querySelectorAll("[data-case-id]").forEach(btn=>btn.onclick=()=>selectCase360Suggestion(btn.dataset.caseId));
+}
+function selectCase360Suggestion(id){
+  const c=(Array.isArray(state.cases)?state.cases:[]).find(x=>x.id===id);
+  if(!c)return;
+  const input=document.getElementById("caseDetailsSearch");
+  if(input)input.value=c.number||c.title||"";
+  const popup=document.getElementById("case360SearchSuggestions");
+  if(popup){popup.innerHTML="";popup.style.display="none";}
+  caseDetails360Enhanced("",id);
+}
 function caseDetails360Search(value){caseDetails360Enhanced(String(value||document.getElementById("caseDetailsSearch")?.value||""));}
+
 if(typeof pages!=="undefined") pages["case-details"]=caseDetails360Enhanced;
 window.caseDetails=caseDetails360Enhanced;
 
