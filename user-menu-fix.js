@@ -35,11 +35,16 @@
       '<button type="button" class="profile-menu-item danger" data-profile-action="logout">↪ Logout</button>';
     topActions.appendChild(menu);
 
-    chip.addEventListener('click',function(e){
+    /* Capture the account-button click before any legacy/global click handler.
+       The account button must NEVER logout directly. Logout is available only
+       from the explicit menu item after confirmation. */
+    document.addEventListener('click',function(e){
+      const account=e.target.closest && e.target.closest('.user-chip');
+      if(!account) return;
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       openMenu();
-    });
+    },true);
 
     menu.addEventListener('click',function(e){
       const item=e.target.closest('[data-profile-action]');
