@@ -25,40 +25,22 @@
       return norm(el.getAttribute('aria-label')) === wanted || norm(el.getAttribute('placeholder')) === wanted;
     }) || null;
   }
-  function caseClient(c, all) {
-    var ids = Array.isArray(c.clientIds) ? c.clientIds : (c.clientId ? [c.clientId] : []);
-    var clients = all && Array.isArray(all.clients) ? all.clients : [];
-    var linked = clients.find(function (x) { return ids.indexOf(x.id) !== -1; });
-    return c.client || (linked && linked.name) || '';
-  }
-  function setValue(el, value, readonly) {
-    if (!el) return;
-    var next = value == null ? '' : String(value);
-    try {
-      var setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value');
-      if (setter && setter.set) setter.set.call(el, next); else el.value = next;
-    } catch (_) { el.value = next; }
-    if (readonly) { el.readOnly = true; el.setAttribute('aria-readonly', 'true'); }
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
   function fillHearingCase(modal, id) {
     var all = data(), list = Array.isArray(all.cases) ? all.cases : [];
     var c = list.find(function (x) { return String(x.id) === String(id) || String(x.number) === String(id); });
     if (!c) return;
-
-    var title = control('Case Title', modal) || modal.querySelector('#f4');
-    var clientInput = control('Client', modal) || modal.querySelector('#fClient');
-    var court = control('Court', modal) || modal.querySelector('#f5');
-    var stage = control('Stage', modal) || modal.querySelector('#f6');
-    var clientName = caseClient(c, all);
-
-    setValue(title, c.title || '', false);
-    setValue(clientInput, clientName, true);
-    setValue(court, c.court || '', false);
-    setValue(stage, c.stage || '', false);
-
-    var hidden = modal.querySelector('input[name="caseId"], input[data-case-id]');
+    var title = modal.querySelector('#f4') || control('Case Title', modal);
+    var clientInput = modal.querySelector('#fClient') || control('Client', modal);
+    var court = modal.querySelector('#f5') || control('Court', modal);
+    var stage = modal.querySelector('#f6') || control('Stage', modal);
+    var clients = Array.isArray(all.clients) ? all.clients : [];
+    var ids = Array.isArray(c.clientIds) ? c.clientIds : (c.clientId ? [c.clientId] : []);
+    var linked = clients.find(function(x){ return ids.indexOf(x.id) !== -1; });
+    if (title) title.value = c.title || '';
+    if (clientInput) clientInput.value = linked ? (linked.name || '') : (c.client || '');
+    if (court) court.value = c.court || '';
+    if (stage) stage.value = c.stage || '';
+    var hidden = modal.querySelector('input[name="caseId"]');
     if (!hidden) {
       hidden = document.createElement('input');
       hidden.type = 'hidden';
@@ -66,79 +48,18 @@
       modal.appendChild(hidden);
     }
     hidden.value = c.id || '';
-    modal.dataset.advocateSelectedCaseId = c.id || c.number || '';
-  }
-  function delayedFill(modal, id) {
-    [0, 30, 120, 350, 800].forEach(function (delay) {
-      window.setTimeout(function () { fillHearingCase(modal, id); }, delay);
-    });
   }
   function enhanceHearing() {
     var modal = Array.from(document.querySelectorAll('.modal,[role="dialog"]')).find(function (m) {
       return (m.offsetWidth || m.offsetHeight || m.getClientRects().length) && /Schedule Hearing|Edit Hearing/i.test(m.textContent || '');
     });
     if (!modal) return;
-    var all = data(), cases = Array.isArray(all.cases) ? all.cases : [];
-    var original = control('Case Number', modal);
-    if (!original || !cases.length) return;
-    if (original.dataset.advocateSearchReady === '1') {
-      var selectedId = original.dataset.caseId || modal.dataset.advocateSelectedCaseId;
-      if (selectedId) delayedFill(modal, selectedId);
-      return;
-    }
-    original.dataset.advocateSearchReady = '1';
-    var wrap = document.createElement('div');
-    wrap.className = 'adv-case-search';
-    wrap.style.cssText = 'position:relative;width:100%;z-index:10050;';
-    original.parentNode.insertBefore(wrap, original);
-    wrap.appendChild(original);
-    original.type = 'text';
-    original.readOnly = false;
-    original.disabled = false;
-    original.autocomplete = 'off';
-    original.placeholder = 'Search case number, title or client';
-    original.setAttribute('role', 'combobox');
-    original.setAttribute('aria-expanded', 'false');
-    var menu = document.createElement('div');
-    menu.className = 'adv-case-menu';
-    menu.style.cssText = 'display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:260px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.18);z-index:10060;';
-    wrap.appendChild(menu);
-    function label(c) { return (c.number || c.title || c.id || '') + (c.client ? ' — ' + c.client : ''); }
-    function close() { menu.style.display = 'none'; original.setAttribute('aria-expanded', 'false'); }
-    function render(query) {
-      var q = norm(query);
-      var filtered = cases.filter(function (c) {
-        return !q || [c.number,c.title,c.client,c.court,c.stage,c.id].some(function (v) { return norm(v).indexOf(q) !== -1; });
-      });
-      menu.innerHTML = filtered.length ? filtered.map(function (c) {
-        return '<button type="button" class="adv-case-option" data-case-id="' + esc(c.id || c.number) + '" style="display:block;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid #eef2f7;background:#fff;cursor:pointer;color:#172033"><strong style="display:block">' + esc(c.number || c.id || '—') + '</strong><span style="display:block;font-size:13px">' + esc(c.title || 'Untitled case') + '</span><small style="display:block;color:#64748b">' + esc([c.client, c.court].filter(Boolean).join(' • ') || 'Details unavailable') + '</small></button>';
-      }).join('') : '<div style="padding:12px;color:#64748b">No cases found</div>';
-      menu.style.display = 'block';
-      original.setAttribute('aria-expanded', 'true');
-    }
-    function choose(id) {
-      var c = cases.find(function (x) { return String(x.id) === String(id) || String(x.number) === String(id); });
-      if (!c) return;
-      original.value = label(c);
-      original.dataset.caseId = c.id || c.number;
-      modal.dataset.advocateSelectedCaseId = c.id || c.number;
-      delayedFill(modal, c.id || c.number);
-      close();
-    }
-    original.addEventListener('focus', function () { render(original.value); });
-    original.addEventListener('click', function () { render(original.value); });
-    original.addEventListener('input', function () { original.dataset.caseId = ''; modal.dataset.advocateSelectedCaseId = ''; render(original.value); });
-    original.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') close();
-      if (e.key === 'ArrowDown') { e.preventDefault(); var first = menu.querySelector('.adv-case-option'); if (first) first.focus(); }
-    });
-    menu.addEventListener('click', function (e) {
-      var option = e.target.closest('.adv-case-option');
-      if (option) choose(option.getAttribute('data-case-id'));
-    });
-    document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) close(); }, true);
-    var existing = cases.find(function (c) { return String(c.id) === String(original.dataset.caseId) || String(c.number) === String(original.value); });
-    if (existing) choose(existing.id || existing.number);
+    /* hearings-case-typeahead.js owns this control. Never create a second
+       searchable control on top of it. */
+    if (modal.querySelector('.adv-hearing-case-typeahead')) return;
+    var select = modal.querySelector('#f3');
+    if (select) return;
+    return;
   }
   function hidePast() {
     var table = document.getElementById('hearingTable'); if (!table) return;
@@ -179,6 +100,6 @@
   run();
   window.setInterval(run, 1500);
   var style = document.createElement('style');
-  style.textContent = 'button,a,[role="button"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}@media(max-width:900px){.sidebar{transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:none}.mobile-overlay.show{display:block}.adv-case-option:focus{background:#eef4ff!important}}';
+  style.textContent = 'button,a,[role="button"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}@media(max-width:900px){.sidebar{transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:none}.mobile-overlay.show{display:block}.adv-hearing-case-option:focus{background:#eef4ff!important}}';
   document.head.appendChild(style);
 })();
