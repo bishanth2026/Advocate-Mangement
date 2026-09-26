@@ -1,3 +1,4 @@
+/* AdvocateDesk build 2026-09-26-17: client search + stable SPA refresh */
 const auth=ADAuth.require();
 if(!auth){throw new Error('Authentication required');}
 const seed = {
