@@ -783,7 +783,12 @@ function caseDetails360Enhanced(query="", selectedId="") {
   if(!selectedId){
     try{savedSelectedId=sessionStorage.getItem("advocateDeskCase360SelectedId")||""}catch(e){}
   }
-  const active=casesList.find(c=>c.id===(selectedId||savedSelectedId))||matches[0];
+  // When the user explicitly searches, the first matching case must become
+  // the active workspace. A previously selected Case 360 ID is only restored
+  // when the page is opened without a search query (for example after refresh).
+  const active=selectedId
+    ? (casesList.find(c=>c.id===selectedId)||matches[0])
+    : (q ? matches[0] : (casesList.find(c=>c.id===savedSelectedId)||matches[0]));
   const escv=v=>esc(v==null?"":String(v));
   const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
   const section=(title,action,body,cls="")=>`<section class="c360-section ${cls}"><div class="c360-section-head"><h3>${title}</h3>${action||""}</div>${body}</section>`;
