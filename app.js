@@ -95,8 +95,8 @@ const courtOptions = selected => ['<option value="">Select court</option>', ...K
 const badge=s=>`<span class="badge ${s==="Active"||s==="Completed"?"green":s==="High"||s==="Reserved"?"gold":s==="Pending"?"blue":"red"}">${s}</span>`;
 const content=document.getElementById("content");
 document.title=(auth.role==="super_admin"?"Super Admin":"Admin")+" — AdvocateDesk";
-document.querySelector(".profile-mini strong").textContent=auth.name;
-document.querySelector(".profile-mini small").textContent=auth.role==="super_admin"?"Super Administrator":"Office Administrator";
+const sidebarUserNote=document.querySelector(".sidebar-user-note");
+if(sidebarUserNote){sidebarUserNote.innerHTML=`<span class="nav-icon">●</span><span>Signed in as <strong>${esc(auth.name||"Advocate Admin")}</strong></span>`;}
 document.querySelector(".user-chip").innerHTML=`${auth.role==="super_admin"?"👑":"A"} <span>${auth.name}</span> ▾`;
 if(auth.role!=="super_admin"){document.querySelectorAll(".admin-only").forEach(el=>el.remove())}
 
