@@ -13,3 +13,12 @@
 .sidebar-user-note{display:flex;align-items:center;gap:9px;padding:12px 14px;margin-top:8px;color:#b8c7e5;font-size:12px;border-top:1px solid rgba(255,255,255,.12)}
 .sidebar-user-note strong{display:block;color:#e7eefc;font-size:12px}
 @media(max-width:720px){.profile-menu{right:0;width:210px}}
+
+
+/* Final top-right account placement */
+.topbar{position:sticky;}
+.topbar .top-actions{margin-left:auto!important;margin-right:0!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;position:relative!important;flex:0 0 auto!important;}
+.topbar .user-chip{margin-left:0!important;}
+@media(max-width:720px){
+  .topbar .top-actions{margin-left:auto!important;margin-right:0!important;}
+}
