@@ -174,9 +174,31 @@ function caseClient(){
  content.innerHTML=layout("All Cases","Manage cases, parties and client relationships",`openModal('case')`)+
  `<div class="toolbar"><input class="filter" id="caseClientFilter" placeholder="Search case number, title, client, phone or court..." oninput="filterTable('caseClientTable',this.value)"></div>
  <div class="panel"><table id="caseClientTable"><thead><tr><th>Case Number</th><th>Case Title</th><th>Parties / Clients</th><th>Court</th><th>Next Hearing</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.cases.map((c,i)=>{const linkedIds=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]); const parties=state.clients.filter(x=>linkedIds.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));return `<tr><td><strong>${esc(c.number||'—')}</strong></td><td><strong>${esc(c.title||'—')}</strong></td><td>${parties.length?parties.map(x=>`<div>${esc(x.name)} <span class="muted">(${esc(x.role||'Party')})</span></div>`).join(''):esc(c.client||'—')}</td><td>${esc(c.court||'—')}</td><td>${fmtDate(c.next)}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('case',${i})">Edit</button></td></tr>`}).join('')}</tbody></table></div>
- <div class="panel" style="margin-top:16px"><div class="panel-head"><div><h3>All Clients / Parties</h3><span class="muted">Search and filter registered clients and parties</span></div><button class="primary" onclick="openModal('client')">＋ Add Client</button></div><div class="toolbar client-search-toolbar"><div class="client-search-box" style="position:relative;flex:1"><input class="filter" id="clientTableFilter" autocomplete="off" placeholder="Search client name, role, phone, email or ID..." oninput="clientTableSearchSuggestions(this.value)" onfocus="clientTableSearchSuggestions(this.value)"><div id="clientTableSuggestions" class="client-search-suggestions" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:1000;background:#fff;border:1px solid #dbe3f0;border-radius:10px;box-shadow:0 12px 28px rgba(20,40,80,.14);overflow:hidden"></div></div><button class="secondary" type="button" onclick="clientTableApplySearch()">Search</button></div><table id="clientTable"><thead><tr><th>Client</th><th>Role</th><th>Phone</th><th>Email</th><th>Cases</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.clients.map((c,i)=>`<tr><td><strong>${esc(c.name)}</strong><br><span class="muted">${esc(c.id)}</span></td><td>${esc(c.role||'Petitioner')}</td><td>${esc(c.phone||'')}</td><td>${esc(c.email||'')}</td><td>${c.cases||0}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('client',${i})">Edit</button></td></tr>`).join('')}</tbody></table></div>`;
+ <div class="panel" style="margin-top:16px"><div class="panel-head"><div><h3>All Clients / Parties</h3><span class="muted">Search and filter registered clients and parties</span></div><button class="primary" onclick="openModal('client')">＋ Add Client</button></div><div class="toolbar client-search-toolbar"><div class="client-search-box" style="position:relative;flex:1"><input class="filter" id="clientTableFilter" autocomplete="off" placeholder="Search client name, role, phone, email or ID..." oninput="clientTableFilterLive(this.value)" onfocus="clientTableFilterLive(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();clientTableApplySearch()}"><div id="clientTableSuggestions" class="client-search-suggestions" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:1000;background:#fff;border:1px solid #dbe3f0;border-radius:10px;box-shadow:0 12px 28px rgba(20,40,80,.14);overflow:hidden"></div></div><button class="secondary" type="button" onclick="clientTableApplySearch()">Search</button></div><table id="clientTable"><thead><tr><th>Client</th><th>Role</th><th>Phone</th><th>Email</th><th>Cases</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.clients.map((c,i)=>`<tr><td><strong>${esc(c.name)}</strong><br><span class="muted">${esc(c.id)}</span></td><td>${esc(c.role||'Petitioner')}</td><td>${esc(c.phone||'')}</td><td>${esc(c.email||'')}</td><td>${c.cases||0}</td><td>${badge(c.status)}</td><td><button class="secondary" onclick="openEditModal('client',${i})">Edit</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 
+function clientTableFilterLive(value){
+  const input=document.getElementById("clientTableFilter");
+  const table=document.getElementById("clientTable");
+  const popup=document.getElementById("clientTableSuggestions");
+  const q=String(value||"").trim().toLowerCase();
+  if(!table)return;
+  const rows=Array.from(table.querySelectorAll("tbody tr"));
+  let visible=0;
+  rows.forEach(row=>{
+    const haystack=String(row.textContent||"").replace(/\\s+/g," ").trim().toLowerCase();
+    const show=!q||haystack.includes(q);
+    row.style.display=show?"":"none";
+    if(show)visible++;
+  });
+  if(!popup)return;
+  if(!q){popup.innerHTML="";popup.style.display="none";return;}
+  const clients=Array.isArray(state.clients)?state.clients:[];
+  const matches=clients.filter(c=>[c.name,c.role,c.phone,c.email,c.id].some(v=>String(v??"").toLowerCase().includes(q))).slice(0,8);
+  popup.innerHTML=matches.length?matches.map(c=>"<button type='button' onclick='selectClientTableSuggestion("+JSON.stringify(c.id)+")' style='display:block;width:100%;padding:11px 14px;border:0;border-bottom:1px solid #eef2f7;background:#fff;text-align:left;cursor:pointer'><strong style='display:block;color:#172033'>"+esc(c.name)+"</strong><span style='display:block;margin-top:3px;color:#64748b;font-size:12px'>"+esc(c.role||"Party")+" • "+esc(c.phone||"No phone")+" • "+esc(c.id||"")+"</span></button>").join(""):"<div style='padding:12px 14px;color:#64748b'>No matching client or party found.</div>";
+  popup.style.display="block";
+  if(visible===0 && !matches.length) popup.innerHTML="<div style='padding:12px 14px;color:#64748b'>No matching client or party found.</div>";
+}
 function clientTableSearchSuggestions(value){
   const input=document.getElementById("clientTableFilter");
   const popup=document.getElementById("clientTableSuggestions");
