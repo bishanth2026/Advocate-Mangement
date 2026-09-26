@@ -710,8 +710,7 @@ document.addEventListener("click", function(e){
   }
 });
 
-document.querySelector(".profile-mini").addEventListener("click",()=>ADAuth.logout());
-document.querySelector(".user-chip").addEventListener("click",()=>ADAuth.logout());
+/* User profile/logout interactions are handled by user-menu-fix.js. */
 (function(){
   const originalOpenModal=window.openModal;
   const originalAddRecord=window.addRecord;
