@@ -779,7 +779,11 @@ function caseDetails360Enhanced(query="", selectedId="") {
   const casesList=Array.isArray(state.cases)?state.cases:[];
   const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
   const matches=casesList.filter(c=>!q||[c.number,c.title,c.court,c.type,c.status,c.client,c.cnr,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q))));
-  const active=casesList.find(c=>c.id===selectedId)||matches[0];
+  let savedSelectedId="";
+  if(!selectedId){
+    try{savedSelectedId=sessionStorage.getItem("advocateDeskCase360SelectedId")||""}catch(e){}
+  }
+  const active=casesList.find(c=>c.id===(selectedId||savedSelectedId))||matches[0];
   const escv=v=>esc(v==null?"":String(v));
   const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
   const section=(title,action,body,cls="")=>`<section class="c360-section ${cls}"><div class="c360-section-head"><h3>${title}</h3>${action||""}</div>${body}</section>`;
@@ -803,6 +807,7 @@ function caseDetails360Enhanced(query="", selectedId="") {
     const invoiceReceived=invoicePaid||received;
     const balance=Math.max(0,fees-invoiceReceived);
     window.case360ActiveCaseId=active.id;
+    try{sessionStorage.setItem("advocateDeskCase360SelectedId",active.id||"")}catch(e){}
     workspace=`<div class="c360-workspace">
       <div class="c360-hero"><div><div class="c360-kicker">CASE 360 / CASE WORKSPACE</div><h2>${escv(active.number||"Case")}</h2><p>${escv(active.title||"Untitled case")}</p><small>${escv(active.court||"Court not specified")}</small></div><div class="c360-hero-actions">${badge(active.status||"Active")} ${btn("Print",`printCase360()`)} ${btn("Save",`saveCase360()`)}</div></div>
       <div class="c360-summary"><div><span>Client</span><strong>${escv(parties[0]?.name||active.client||"—")}</strong><small>${escv(parties[0]?.role||"Party")}</small><small>☎ ${escv(parties[0]?.phone||"—")}</small><small>✉ ${escv(parties[0]?.email||"—")}</small></div><div><span>Court</span><strong>${escv(active.court||"—")}</strong></div><div><span>Next Hearing</span><strong>${active.next?fmtDate(active.next):"Not scheduled"}</strong><small>${escv(active.hearingTime||"")}</small></div><div><span>Open Tasks</span><strong>${tasks.filter(t=>!/^completed$/i.test(t.status||"")).length}</strong></div></div>
