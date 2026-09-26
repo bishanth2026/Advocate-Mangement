@@ -443,7 +443,17 @@ const pages={dashboard,"case-client":caseClient,"case-details":caseDetails,cases
 if(auth.role==="super_admin") pages["central-control"]=function(){
  content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><button class="primary" onclick="addAdminDemo()">＋ Create Admin</button></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody><tr><td><strong>Demo Law Office</strong></td><td>Advocate Admin</td><td>${badge("Active")}</td><td>Office management</td></tr></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
 };
-function navigate(page){if(!pages[page]) return;try{sessionStorage.setItem("advocateDeskCurrentPage",page)}catch(e){}document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));pages[page]();setMobileMenu(false)}
+function navigate(page){
+  if(!pages[page]) return;
+  // Persist the active SPA route in three layers so a browser refresh never
+  // falls back to Dashboard: URL hash (primary), sessionStorage and localStorage.
+  try{sessionStorage.setItem("advocateDeskCurrentPage",page)}catch(e){}
+  try{localStorage.setItem("advocateDeskCurrentPage",page)}catch(e){}
+  try{if(location.hash!=="#"+page) history.replaceState(null,"","#"+page)}catch(e){}
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+  pages[page]();
+  setMobileMenu(false)
+}
 function addAdminDemo(){alert("Admin creation is a demo action now. Supabase will create the real account securely in the next phase.")}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
 const mobileMenu=document.getElementById("mobileMenu");
@@ -665,7 +675,26 @@ if(type==="invoice"){ const advocateFee=Number(document.getElementById("f3").val
  }
  save();closeModal();navigate(type==="case"?"cases":type==="client"?"clients":type==="hearing"?"hearings":"tasks")
 }
-navigate("dashboard");
+// Restore the page that was open before a browser refresh/reload.
+// URL hash is the primary route because it survives a hard refresh; storage
+// values provide backward compatibility for existing sessions without a hash.
+(function restoreRouteOnLoad(){
+  let saved="";
+  try{saved=String(location.hash||"").replace(/^#/ ,"").trim()}catch(e){}
+  if(!saved){try{saved=sessionStorage.getItem("advocateDeskCurrentPage")||""}catch(e){}}
+  if(!saved){try{saved=localStorage.getItem("advocateDeskCurrentPage")||""}catch(e){}}
+  const initial=pages[saved]?saved:"dashboard";
+  navigate(initial);
+})();
+// Keep the rendered page synchronized if the browser Back/Forward or another
+// same-page route changes the URL hash.
+window.addEventListener("hashchange",function(){
+  const page=String(location.hash||"").replace(/^#/ ,"").trim();
+  if(pages[page] && page!=="dashboard" && page!=="cases" || pages[page]){
+    const active=document.querySelector(".nav-item.active")?.dataset.page;
+    if(active!==page) navigate(page);
+  }
+});
 // Central Control demo interactions. Supabase will enforce these permissions server-side later.
 document.addEventListener("click", function(e){
   if(e.target && e.target.id==="add-admin-user"){
