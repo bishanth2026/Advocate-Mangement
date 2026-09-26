@@ -31,7 +31,7 @@
     menu.className='profile-menu';
     menu.setAttribute('role','menu');
     menu.innerHTML='<div class="profile-menu-head"><strong>Advocate Admin</strong><small>Office Administrator</small></div>'+
-      '<button type="button" class="profile-menu-item" data-profile-action="profile">👤 Profile</button>'+
+      ''+
       '<button type="button" class="profile-menu-item danger" data-profile-action="logout">↪ Logout</button>';
     topActions.appendChild(menu);
 
