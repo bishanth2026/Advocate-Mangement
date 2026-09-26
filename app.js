@@ -677,14 +677,19 @@ if(type==="invoice"){ const advocateFee=Number(document.getElementById("f3").val
 // Restore the page that was open before a browser refresh/reload.
 // URL hash is the primary route because it survives a hard refresh; storage
 // values provide backward compatibility for existing sessions without a hash.
-(function restoreRouteOnLoad(){
+// Define route restoration here, but execute it only after all page
+// overrides/enhancements in this file have been registered. Previously this
+// ran before caseDetails360Enhanced replaced pages["case-details"], so a hard
+// refresh rendered the legacy Case 360 view while normal navigation rendered
+// the enhanced view.
+window.__advocateDeskRestoreRoute=function(){
   let saved="";
   try{saved=String(location.hash||"").replace(/^#/ ,"").trim()}catch(e){}
   if(!saved){try{saved=sessionStorage.getItem("advocateDeskCurrentPage")||""}catch(e){}}
   if(!saved){try{saved=localStorage.getItem("advocateDeskCurrentPage")||""}catch(e){}}
   const initial=pages[saved]?saved:"dashboard";
   navigate(initial);
-})();
+};
 // Keep the rendered page synchronized if the browser Back/Forward or another
 // same-page route changes the URL hash.
 window.addEventListener("hashchange",function(){
@@ -828,6 +833,10 @@ function caseDetails360LiveSearch(value){
 function caseDetails360Search(value){caseDetails360Enhanced(String(value||document.getElementById("caseDetailsSearch")?.value||""));}
 if(typeof pages!=="undefined") pages["case-details"]=caseDetails360Enhanced;
 window.caseDetails=caseDetails360Enhanced;
+
+// Restore the current route only after the enhanced Case 360 page has been
+// registered, so refresh and in-app navigation use the exact same renderer.
+if(window.__advocateDeskRestoreRoute) window.__advocateDeskRestoreRoute();
 
 
 // Case 360 print/save actions
