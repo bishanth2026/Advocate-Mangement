@@ -557,3 +557,15 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .content{padding:14px 10px}
   .page-title h1{font-size:19px}
 }
+
+/* Case 360 live search suggestions */
+.case360-search-toolbar{position:relative;align-items:stretch}
+.case360-search-wrap{position:relative;flex:1;min-width:0}
+.case360-search-wrap .filter{width:100%;height:100%}
+.case360-search-suggestions{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:1000;background:#fff;border:1px solid #dbe3f0;border-radius:10px;box-shadow:0 14px 30px rgba(20,40,80,.16);overflow:hidden;max-height:360px;overflow-y:auto}
+.case360-suggestion{display:block;width:100%;padding:11px 14px;border:0;border-bottom:1px solid #eef2f7;background:#fff;text-align:left;cursor:pointer}
+.case360-suggestion:last-child{border-bottom:0}
+.case360-suggestion:hover{background:#f3f7ff}
+.case360-suggestion strong{display:block;color:#172033;font-size:13px}
+.case360-suggestion span{display:block;margin-top:3px;color:#64748b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.case360-suggestion-empty{padding:12px 14px;color:#64748b;font-size:12px}
