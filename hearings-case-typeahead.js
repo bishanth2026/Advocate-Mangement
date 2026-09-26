@@ -1,46 +1,184 @@
 (function(){
   'use strict';
-  function enhance(){
-    var modal=document.getElementById('modal');
-    if(!modal || modal.classList.contains('hidden')) return;
-    var heading=(modal.querySelector('#modalTitle')||{}).textContent||'';
-    if(!/hearing/i.test(heading)) return;
-    var data=JSON.parse(localStorage.getItem('advocateDeskData')||'null')||{};
-    var cases=Array.isArray(data.cases)?data.cases:[];
-    if(!cases.length) return;
-    var selects=Array.from(modal.querySelectorAll('select'));
-    var select=selects.find(function(s){
-      var ctx=((s.name||'')+' '+(s.id||'')+' '+((s.previousElementSibling||{}).textContent||'')).toLowerCase();
-      return /case|number/.test(ctx) || Array.from(s.options||[]).some(function(o){return cases.some(function(c){return o.textContent.trim()===c.number;});});
-    });
-    if(!select || select.dataset.hearingTypeahead==='1') return;
-    select.dataset.hearingTypeahead='1';
-    var options=cases.filter(function(c){return c.number;});
-    var wrap=document.createElement('div'); wrap.style.cssText='position:relative;width:100%';
-    var input=document.createElement('input'); input.type='text'; input.className=select.className||''; input.placeholder='Type case number...'; input.autocomplete='off';
-    var menu=document.createElement('div'); menu.style.cssText='position:absolute;left:0;right:0;top:100%;z-index:9999;background:#fff;border:1px solid #d1d5db;border-radius:8px;max-height:240px;overflow:auto;display:none;box-shadow:0 8px 20px rgba(0,0,0,.12)';
-    function fillRelated(c){
-      var fields=Array.from(modal.querySelectorAll('input,textarea,select')).filter(function(el){return el!==select&&el!==input;});
-      fields.forEach(function(el){
-        var ctx=((el.name||'')+' '+(el.id||'')+' '+((el.previousElementSibling||{}).textContent||'')).toLowerCase();
-        var val=null;
-        if(/title|case name|matter/.test(ctx)) val=c.title;
-        else if(/client|party|petitioner|respondent/.test(ctx)) val=c.client;
-        else if(/court/.test(ctx)) val=c.court;
-        else if(/type|category/.test(ctx)) val=c.type;
-        if(val!=null && !el.value){el.value=val;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
-      });
-    }
-    function render(){
-      var q=input.value.trim().toLowerCase(); menu.innerHTML='';
-      options.filter(function(c){return !q||c.number.toLowerCase().includes(q)||String(c.title||'').toLowerCase().includes(q);}).forEach(function(c){
-        var item=document.createElement('button'); item.type='button'; item.textContent=c.number+' — '+(c.title||''); item.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;cursor:pointer';
-        item.addEventListener('click',function(){input.value=c.number;select.value=c.id;menu.style.display='none';fillRelated(c);}); menu.appendChild(item);
-      }); menu.style.display=menu.children.length?'block':'none';
-    }
-    input.addEventListener('focus',render); input.addEventListener('input',function(){select.value='';render();});
-    document.addEventListener('click',function(e){if(!wrap.contains(e.target))menu.style.display='none';});
-    wrap.appendChild(input);wrap.appendChild(menu);select.style.display='none';select.parentNode.insertBefore(wrap,select);
+
+  function readData(){
+    try { return JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {}; }
+    catch(e){ return {}; }
   }
-  new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true}); setTimeout(enhance,100);
+  function esc(v){
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function norm(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
+
+  function getClient(c, data){
+    var clients = Array.isArray(data.clients) ? data.clients : [];
+    var ids = Array.isArray(c.clientIds) ? c.clientIds : (c.clientId ? [c.clientId] : []);
+    var linked = clients.find(function(x){ return ids.indexOf(x.id) !== -1; });
+    return linked || null;
+  }
+
+  function fillCase(modal, c){
+    if(!c) return;
+    var data = readData();
+    var client = getClient(c, data);
+    var title = modal.querySelector('#f4');
+    var clientInput = modal.querySelector('#fClient');
+    var court = modal.querySelector('#f5');
+    var stage = modal.querySelector('#f6');
+
+    if(title) title.value = c.title || '';
+    if(clientInput) clientInput.value = client ? (client.name || '') : (c.client || '');
+    if(court) court.value = c.court || '';
+    if(stage) stage.value = c.stage || '';
+
+    [title,clientInput,court,stage].forEach(function(el){
+      if(el){
+        el.dispatchEvent(new Event('input',{bubbles:true}));
+        el.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    });
+
+    var hidden = modal.querySelector('input[name="caseId"]');
+    if(!hidden){
+      hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'caseId';
+      modal.querySelector('#modalBody').appendChild(hidden);
+    }
+    hidden.value = c.id || '';
+
+    modal.dataset.hearingCaseId = c.id || '';
+  }
+
+  function enhance(){
+    var modal = document.getElementById('modal');
+    if(!modal || modal.classList.contains('hidden')) return;
+    var heading = (modal.querySelector('#modalTitle') || {}).textContent || '';
+    if(!/hearing/i.test(heading)) return;
+
+    /* This is the single owner of the Hearing Case Number control.
+       app-fixes.js must not replace this control again. */
+    var existingWrap = modal.querySelector('.adv-hearing-case-typeahead');
+    if(existingWrap) return;
+
+    var data = readData();
+    var cases = Array.isArray(data.cases) ? data.cases.filter(function(c){ return c && (c.id || c.number); }) : [];
+    var select = modal.querySelector('#f3');
+    if(!select || select.dataset.hearingTypeahead === '1') return;
+
+    select.dataset.hearingTypeahead = '1';
+
+    var wrap = document.createElement('div');
+    wrap.className = 'adv-hearing-case-typeahead';
+    wrap.style.cssText = 'position:relative;width:100%;z-index:20000;';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = select.className || '';
+    input.placeholder = 'Search case number, title, client or court';
+    input.autocomplete = 'off';
+    input.setAttribute('role','combobox');
+    input.setAttribute('aria-expanded','false');
+    input.setAttribute('aria-autocomplete','list');
+    input.style.width = '100%';
+
+    var menu = document.createElement('div');
+    menu.className = 'adv-hearing-case-menu';
+    menu.style.cssText = 'display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30000;background:#fff;border:1px solid #d1d5db;border-radius:10px;max-height:260px;overflow:auto;box-shadow:0 12px 30px rgba(0,0,0,.18);';
+
+    wrap.appendChild(input);
+    wrap.appendChild(menu);
+    select.parentNode.insertBefore(wrap, select);
+    select.style.display = 'none';
+
+    function optionText(c){
+      return (c.number || c.id || '') + ' — ' + (c.title || 'Untitled case');
+    }
+
+    function render(){
+      var q = norm(input.value);
+      var filtered = cases.filter(function(c){
+        return !q || [c.number,c.title,c.client,c.court,c.stage,c.id].some(function(v){
+          return norm(v).indexOf(q) !== -1;
+        });
+      });
+
+      if(!filtered.length){
+        menu.innerHTML = '<div style="padding:12px;color:#64748b">No cases found</div>';
+      } else {
+        menu.innerHTML = filtered.map(function(c){
+          var client = getClient(c,data);
+          var clientName = client ? client.name : (c.client || '');
+          return '<button type="button" class="adv-hearing-case-option" data-case-id="' + esc(c.id || c.number) + '" style="display:block;width:100%;text-align:left;padding:11px 12px;border:0;border-bottom:1px solid #eef2f7;background:#fff;color:#172033;cursor:pointer;">' +
+            '<strong style="display:block;font-size:14px;">' + esc(c.number || c.id || '—') + '</strong>' +
+            '<span style="display:block;font-size:13px;margin-top:2px;">' + esc(c.title || 'Untitled case') + '</span>' +
+            '<small style="display:block;color:#64748b;margin-top:3px;">' + esc([clientName,c.court].filter(Boolean).join(' • ') || 'Details unavailable') + '</small>' +
+            '</button>';
+        }).join('');
+      }
+      menu.style.display = 'block';
+      input.setAttribute('aria-expanded','true');
+    }
+
+    function close(){
+      menu.style.display = 'none';
+      input.setAttribute('aria-expanded','false');
+    }
+
+    function choose(id){
+      var c = cases.find(function(x){ return String(x.id) === String(id) || String(x.number) === String(id); });
+      if(!c) return;
+
+      select.value = c.id || '';
+      input.value = optionText(c);
+      input.dataset.caseId = c.id || c.number || '';
+
+      /* Use the same existing sync function used by the app, then explicitly
+         apply the selected record so no stale case can overwrite it. */
+      if(typeof window.syncHearingCase === 'function') {
+        try { window.syncHearingCase(); } catch(e) {}
+      }
+      fillCase(modal,c);
+      close();
+    }
+
+    input.addEventListener('focus', render);
+    input.addEventListener('click', render);
+    input.addEventListener('input', function(){
+      input.dataset.caseId = '';
+      select.value = '';
+      render();
+    });
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') close();
+      if(e.key === 'ArrowDown'){
+        e.preventDefault();
+        var first = menu.querySelector('.adv-hearing-case-option');
+        if(first) first.focus();
+      }
+    });
+
+    menu.addEventListener('click', function(e){
+      var option = e.target.closest('.adv-hearing-case-option');
+      if(option) choose(option.getAttribute('data-case-id'));
+    });
+
+    document.addEventListener('click', function(e){
+      if(!wrap.contains(e.target)) close();
+    }, true);
+
+    var currentId = select.value;
+    var current = cases.find(function(c){ return String(c.id) === String(currentId); });
+    if(current){
+      input.value = optionText(current);
+      input.dataset.caseId = current.id || '';
+      fillCase(modal,current);
+    }
+  }
+
+  new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});
+  setTimeout(enhance,100);
+  setInterval(enhance,500);
 })();
