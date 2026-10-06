@@ -113,22 +113,88 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 
 /* ===== Dashboard legal hero banner ===== */
 .dashboard-hero{
-  position:relative;width:100%;aspect-ratio:1335/220;min-height:0;margin:0 0 16px;
-  border-radius:14px;background-color:#0b1735;background-image:url("assets/dashboard-legal-banner.png");
-  background-size:calc(100% - 104px) 100%;background-position:right center;background-repeat:no-repeat;
-  box-shadow:0 14px 34px rgba(20,35,80,.16);border:1px solid rgba(255,255,255,.75);overflow:hidden;
+  position:relative;
+  width:100%;
+  aspect-ratio:1335/260;
+  min-height:0;
+  margin:0;
+  border-radius:14px;
+  background:#0b1735 url("assets/dashboard-legal-banner.png") center center / 100% 100% no-repeat;
+  box-shadow:none;
+  border:0;
+  overflow:hidden;
 }
-.dashboard-hero-photo{
-  position:absolute;left:13px;top:50%;transform:translateY(-50%);width:82px;height:82px;border-radius:50%;
-  padding:4px;background:rgba(255,255,255,.96);box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:2;
+.dashboard-hero:before{display:none !important}
+.dashboard-hero:after{display:none !important}
+.dashboard-advocate-photo{
+  position:absolute !important;
+  left:135px !important;
+  top:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:158px !important;
+  height:158px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  transform:translate(-50%,-50%) !important;
+  display:block !important;
+  overflow:visible !important;
+  z-index:3 !important;
 }
-.dashboard-hero-photo img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:center}
+.dashboard-advocate-photo img{
+  display:block !important;
+  width:158px !important;
+  height:158px !important;
+  min-width:158px !important;
+  min-height:158px !important;
+  max-width:158px !important;
+  max-height:158px !important;
+  margin:0 !important;
+  padding:4px !important;
+  border:4px solid rgba(255,255,255,.98) !important;
+  border-radius:50% !important;
+  background:#fff !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.28) !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+}
+.dashboard-advocate-photo:after{display:none !important}
+.dashboard-advocate-photo span{display:none !important}
+
 @media(max-width:720px){
-  .dashboard-hero{border-radius:12px;background-size:calc(100% - 86px) 100%}
-  .dashboard-hero-photo{left:9px;width:66px;height:66px;padding:3px}
+  .dashboard-hero:after{display:none}
+  .dashboard-hero{
+    border-radius:12px;
+    background-size:100% 100%;
+  }
+  .dashboard-hero:before{display:none !important}
+  .dashboard-advocate-photo{
+    left:72px !important;
+    width:100px !important;
+    height:100px !important;
+  }
+  .dashboard-advocate-photo img{
+    width:100px !important;
+    height:100px !important;
+    min-width:100px !important;
+    min-height:100px !important;
+    max-width:100px !important;
+    max-height:100px !important;
+    padding:3px !important;
+    border-width:3px !important;
+  }
 }
 
 /* Central administration controls */
+
+
+
+
+
 .admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0}
 .admin-card{position:relative;display:flex;align-items:center;gap:16px;padding:22px;border-radius:18px;color:#fff;box-shadow:0 12px 30px rgba(30,41,59,.12);overflow:hidden}
 .admin-card:after{content:"";position:absolute;right:-35px;top:-45px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12)}
@@ -582,3 +648,305 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 .case360-suggestion strong{display:block;color:#172033;font-size:13px}
 .case360-suggestion span{display:block;margin-top:3px;color:#64748b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .case360-suggestion-empty{padding:12px 14px;color:#64748b;font-size:12px}
+
+/* ===== Final mobile layout pass — alignment only, no functional changes ===== */
+@media (max-width:720px){
+  html,body{overflow-x:hidden!important}
+  #app{width:100%!important;min-width:0!important}
+  .main{width:100%!important;min-width:0!important;margin-left:0!important}
+  .topbar{width:100%!important;min-width:0!important;padding:9px 10px!important;gap:7px!important}
+  .topbar .search{min-width:0!important;flex:1 1 auto!important;width:auto!important}
+  .top-actions{min-width:0!important}
+  .content{width:100%!important;max-width:100%!important;min-width:0!important;padding:14px 10px 24px!important}
+  .page-title{width:100%!important;min-width:0!important}
+  .page-title>div{min-width:0!important}
+  .cards,.grid-2,.quick-grid,.admin-grid,.admin-control-grid{width:100%!important;min-width:0!important}
+  .grid-2{grid-template-columns:minmax(0,1fr)!important}
+  .panel{width:100%!important;min-width:0!important;max-width:100%!important}
+  .panel-head{width:100%!important;min-width:0!important}
+  .panel-head .secondary{flex:0 0 auto!important;width:auto!important;min-width:0!important}
+  .panel-body{width:100%!important;min-width:0!important}
+  .toolbar{width:100%!important;min-width:0!important}
+  .toolbar>*{max-width:100%!important;min-width:0!important}
+  .form-grid{width:100%!important;min-width:0!important}
+  .field input,.field select,.field textarea{box-sizing:border-box!important}
+  .form-actions{width:100%!important}
+  .form-actions button{min-width:0!important}
+  table{min-width:620px}
+  .panel-body{overflow-x:auto!important}
+  .calendar-search-bar{width:100%!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;gap:6px!important;align-items:stretch!important}
+  .calendar-search-bar input{min-width:0!important;width:100%!important;height:42px!important}
+  .calendar-search-bar button{min-width:0!important;height:42px!important;padding:9px 11px!important}
+  .calendar-toolbar{width:100%!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) 42px auto!important;gap:6px!important;align-items:center!important}
+  .calendar-toolbar h2{min-width:0!important;font-size:18px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .calendar-toolbar .secondary{min-width:42px!important;padding:9px 8px!important}
+  .calendar-main>div[style*="display:flex"]{width:100%!important;min-width:0!important}
+  .calendar-main>div[style*="display:flex"] select{min-width:0!important;max-width:100%!important;flex:1 1 auto!important}
+  .court-cal-grid,.calendar-weekdays{width:100%!important;grid-template-columns:repeat(7,minmax(0,1fr))!important}
+  .court-cal-cell{width:100%!important;min-width:0!important}
+  .next-cases-card{width:100%!important;min-width:0!important}
+  .list-row{min-width:0!important}
+  .list-main{min-width:0!important}
+  .list-main strong,.list-main small{overflow-wrap:anywhere!important}
+  .date-box{flex:0 0 43px!important}
+  .modal{width:100%!important}
+  .modal-card{width:100%!important;min-width:0!important}
+}
+@media (max-width:430px){
+  .content{padding-left:8px!important;padding-right:8px!important}
+  .calendar-search-bar{grid-template-columns:minmax(0,1fr) auto!important}
+  .calendar-search-bar #calendarSearchClear{grid-column:1 / -1!important}
+  .calendar-toolbar{grid-template-columns:38px minmax(0,1fr) 38px!important}
+  .calendar-toolbar #calToday{grid-column:1 / -1!important;width:100%!important}
+  .calendar-toolbar .secondary{min-width:38px!important}
+  .calendar-toolbar h2{font-size:17px!important}
+}
+
+/* Final mobile vertical-spacing correction — removes flex-created blank space only */
+@media (max-width:720px){
+  .page-title{height:auto!important;min-height:0!important;margin-bottom:12px!important;gap:8px!important}
+  .page-title>div{flex:0 1 auto!important;height:auto!important;min-height:0!important}
+  .page-title h1{margin-bottom:0!important}
+  .page-title p{margin-top:5px!important;margin-bottom:0!important}
+  .page-title .primary{margin-top:0!important}
+  .dashboard-hero{margin-top:0!important;margin-bottom:10px!important}
+  .notice{margin-top:0!important;margin-bottom:12px!important}
+  .cards{margin-top:0!important;margin-bottom:14px!important}
+  .dashboard-calendar-wrap{margin-top:12px!important}
+  .panel{margin-top:12px}
+  .panel:first-child{margin-top:0}
+  .grid-2{gap:12px!important}
+  .quick-grid{gap:8px!important}
+}
+@media (max-width:430px){
+  .content{padding-top:12px!important;padding-bottom:20px!important}
+  .page-title{margin-bottom:10px!important}
+}
+
+/* Finance mobile table alignment — presentation only */
+@media (max-width:720px){
+  .finance-main-table tbody td:nth-child(1)::before{content:"Invoice"}
+  .finance-main-table tbody td:nth-child(2)::before{content:"Client"}
+  .finance-main-table tbody td:nth-child(3)::before{content:"Amount"}
+  .finance-main-table tbody td:nth-child(4)::before{content:"Paid"}
+  .finance-main-table tbody td:nth-child(5)::before{content:"Status"}
+  .finance-main-table tbody td:nth-child(6)::before{content:"Actions"}
+
+  .finance-client-table tbody td:nth-child(1)::before{content:"Invoice"}
+  .finance-client-table tbody td:nth-child(2)::before{content:"Invoice Date"}
+  .finance-client-table tbody td:nth-child(3)::before{content:"Total Amount"}
+  .finance-client-table tbody td:nth-child(4)::before{content:"Paid Amount"}
+  .finance-client-table tbody td:nth-child(5)::before{content:"Outstanding"}
+  .finance-client-table tbody td:nth-child(6)::before{content:"Status"}
+
+  .finance-payment-table tbody td:nth-child(1)::before{content:"Payment Date"}
+  .finance-payment-table tbody td:nth-child(2)::before{content:"Invoice"}
+  .finance-payment-table tbody td:nth-child(3)::before{content:"Payment Method"}
+  .finance-payment-table tbody td:nth-child(4)::before{content:"Amount Received"}
+  .finance-payment-table tbody td:nth-child(5)::before{content:"Client Balance"}
+  .finance-payment-table tbody td:nth-child(6)::before{content:"Reference / Notes"}
+
+  .finance-main-table tbody tr,
+  .finance-client-table tbody tr,
+  .finance-payment-table tbody tr{
+    padding:12px 14px!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  .finance-main-table tbody td,
+  .finance-client-table tbody td,
+  .finance-payment-table tbody td{
+    align-items:center!important;
+    min-height:42px!important;
+    box-sizing:border-box!important;
+  }
+  .finance-main-table tbody td::before,
+  .finance-client-table tbody td::before,
+  .finance-payment-table tbody td::before{
+    flex:0 0 36%!important;
+    max-width:36%!important;
+    padding-right:8px!important;
+    box-sizing:border-box!important;
+    line-height:1.3!important;
+  }
+  .finance-main-table tbody td > *,
+  .finance-client-table tbody td > *,
+  .finance-payment-table tbody td > *{
+    flex:0 1 64%!important;
+    width:auto!important;
+    max-width:64%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    text-align:right!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  .finance-main-table .table-actions{
+    display:flex!important;
+    flex:0 1 64%!important;
+    max-width:64%!important;
+    width:auto!important;
+    justify-content:flex-end!important;
+    gap:6px!important;
+    flex-wrap:wrap!important;
+  }
+  .finance-main-table .table-actions .secondary{
+    min-width:72px!important;
+    flex:0 1 auto!important;
+  }
+
+  /* Group and total rows remain readable while preserving the existing grouping. */
+  .finance-client-table .client-group-row td,
+  .finance-client-table .client-total-row td,
+  .finance-payment-table .client-group-row td,
+  .finance-payment-table .client-total-row td{
+    display:block!important;
+    text-align:left!important;
+    padding:10px 0!important;
+    min-height:0!important;
+  }
+  .finance-client-table .client-group-row td::before,
+  .finance-client-table .client-total-row td::before,
+  .finance-payment-table .client-group-row td::before,
+  .finance-payment-table .client-total-row td::before{
+    display:none!important;
+    content:none!important;
+  }
+  .finance-client-table .client-group-row td,
+  .finance-payment-table .client-group-row td{
+    font-size:12px!important;
+  }
+}
+@media (max-width:430px){
+  .finance-main-table tbody td,
+  .finance-client-table tbody td,
+  .finance-payment-table tbody td{
+    font-size:12px!important;
+    gap:8px!important;
+  }
+  .finance-main-table tbody td::before,
+  .finance-client-table tbody td::before,
+  .finance-payment-table tbody td::before{
+    flex-basis:38%!important;
+    max-width:38%!important;
+    font-size:10px!important;
+  }
+  .finance-main-table tbody td > *,
+  .finance-client-table tbody td > *,
+  .finance-payment-table tbody td > *{
+    flex-basis:62%!important;
+    max-width:62%!important;
+  }
+  .finance-main-table .table-actions{
+    flex-basis:62%!important;
+    max-width:62%!important;
+  }
+}
+
+
+/* Advocate profile settings — keep profile controls aligned and readable */
+.advocate-profile-settings{
+  display:grid;
+  grid-template-columns:140px minmax(0,1fr);
+  gap:22px;
+  align-items:center;
+  padding:20px;
+}
+.advocate-profile-preview-wrap{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  flex:none;
+  background:linear-gradient(135deg,#172554,#3155a6);
+  color:#fff;
+  font-size:34px;
+  font-weight:700;
+  border:4px solid #fff;
+  box-shadow:0 8px 20px rgba(23,37,84,.16);
+}
+.advocate-profile-preview-wrap img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+.advocate-profile-info{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+}
+.advocate-profile-info>strong{
+  font-size:16px;
+  line-height:1.3;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.advocate-profile-info>small{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.advocate-photo-upload{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  margin-top:6px;
+  cursor:pointer;
+  overflow:hidden;
+}
+.advocate-photo-upload input[type="file"]{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+}
+.profile-photo-help{
+  max-width:460px;
+}
+@media(max-width:720px){
+  .advocate-profile-settings{
+    grid-template-columns:1fr;
+    justify-items:center;
+    text-align:center;
+  }
+  .advocate-profile-info{
+    align-items:center;
+    width:100%;
+  }
+  .advocate-photo-upload{justify-content:center}
+  .profile-photo-help{max-width:100%}
+}
+
+
+/* ===== Dashboard/banner color blending =====
+   Softly carries the banner's navy, warm gold and charcoal tones into the
+   surrounding white dashboard background without changing cards or modules. */
+.content:has(.dashboard-hero){
+  background:
+    radial-gradient(ellipse 42% 26% at 18% 22%,rgba(23,37,84,.10),transparent 72%),
+    radial-gradient(ellipse 38% 24% at 58% 20%,rgba(166,108,45,.08),transparent 72%),
+    radial-gradient(ellipse 42% 28% at 92% 22%,rgba(48,48,44,.07),transparent 72%),
+    linear-gradient(180deg,#f3f6fb 0%,#f8fafc 32%,#eef4f8 100%);
+}
+.content:has(.dashboard-hero) .dashboard-hero{
+  box-shadow:
+    0 8px 24px rgba(23,37,84,.10),
+    0 0 34px rgba(166,108,45,.06);
+}
+
+/* Finance report PDF: keep client lookup controls on-screen only. */
+@media print{
+  .report-mode .report-filter{display:none!important;}
+  .report-mode #financialClientReport{display:block!important;}
+}

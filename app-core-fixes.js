@@ -2,10 +2,10 @@
 (function () {
   'use strict';
   if (typeof window.esc !== 'function') window.esc = function (v) {
-    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
   function data() {
-    try { return JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {}; }
+    try { return window.appState || {}; }
     catch (_) { return {}; }
   }
   function date(v) { if (!v) return null; var d = new Date(String(v).slice(0, 10) + 'T00:00:00'); return isNaN(d.getTime()) ? null : d; }
@@ -70,14 +70,24 @@
     });
   }
   function dashboardFix() {
-    var content = document.getElementById('content'); if (!content || !content.querySelector('.cards')) return;
+    var content = document.getElementById('content');
+    var dashboardNav = document.querySelector('.nav-item[data-page="dashboard"].active');
+    /* Finance and other modules also use .cards. Only apply Dashboard greeting fixes
+       when Dashboard is actually the active SPA page. */
+    if (!dashboardNav || !content || !content.querySelector('.cards')) return;
     var now = new Date(), hour = now.getHours();
     var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    var title = content.querySelector('.page-title h1');
-    if (title) title.textContent = greeting + ', Advocate';
-    var subtitle = content.querySelector('.page-title p');
-    if (subtitle) subtitle.textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' • Demo Workspace';
-    var hearings = Array.isArray(data().hearings) ? data().hearings : [], start = new Date(now); start.setHours(0, 0, 0, 0), end = new Date(start); end.setDate(end.getDate() + 30);
+    var session = null;
+    try { session = window.ADAuth && typeof window.ADAuth.get === 'function' ? window.ADAuth.get() : null; } catch (_) {}
+    /* app.js renders the authoritative greeting and workspace after secure bootstrap.
+       Never replace authenticated cloud identity with demo fallback text. */
+    if (!session || !session.cloudAuth) {
+      var title = content.querySelector('.page-title h1');
+      if (title) title.textContent = greeting + ', Advocate';
+      var subtitle = content.querySelector('.page-title p');
+      if (subtitle) subtitle.textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' • Demo Workspace';
+    }
+    var hearings = Array.isArray(data().hearings) ? data().hearings : [], start = new Date(now); start.setHours(0, 0, 0, 0); var end = new Date(start); end.setDate(end.getDate() + 30);
     var count = hearings.filter(function (h) { var d = date(h.date); return d && d >= start && d <= end; }).length;
     var cards = content.querySelectorAll('.stat'), value = cards[1] && cards[1].querySelector('.stat-value');
     if (value) value.textContent = String(count);
@@ -85,7 +95,7 @@
   function mobileNav() {
     var sidebar = document.querySelector('.sidebar'), overlay = document.getElementById('mobileOverlay');
     if (!sidebar || !overlay) return;
-    sidebar.classList.remove('open'); overlay.classList.remove('show'); overlay.setAttribute('aria-hidden', 'true');
+    sidebar.classList.remove('open'); overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true');
   }
   function run() { enhanceHearing(); hidePast(); dashboardFix(); }
   document.addEventListener('click', function (e) {
@@ -98,8 +108,8 @@
   }, false);
   window.addEventListener('hashchange', function () { window.setTimeout(run, 80); });
   run();
-  window.setInterval(run, 1500);
+  // No polling timer: fixes run on relevant navigation/change events only.
   var style = document.createElement('style');
-  style.textContent = 'button,a,[role="button"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}@media(max-width:900px){.sidebar{transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:none}.mobile-overlay.show{display:block}.adv-hearing-case-option:focus{background:#eef4ff!important}}';
+  style.textContent = 'button,a,[role="button"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}@media(max-width:900px){.sidebar{transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:none}.mobile-overlay.open{display:block}.adv-hearing-case-option:focus{background:#eef4ff!important}}';
   document.head.appendChild(style);
 })();
