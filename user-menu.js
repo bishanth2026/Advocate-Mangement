@@ -30,7 +30,10 @@
     menu.id='profileMenu';
     menu.className='profile-menu';
     menu.setAttribute('role','menu');
-    menu.innerHTML='<div class="profile-menu-head"><strong>Advocate Admin</strong><small>Office Administrator</small></div>'+
+    const auth=window.ADAuth&&typeof window.ADAuth.get==='function'?window.ADAuth.get():null;
+    const profileName=(auth&&auth.name)||'Advocate Admin';
+    const profileRole=(auth&&auth.role==='super_admin')?'System Owner':'Office Administrator';
+    menu.innerHTML='<div class="profile-menu-head"><strong>'+window.esc(profileName)+'</strong><small>'+window.esc(profileRole)+'</small></div>'+
       ''+
       '<button type="button" class="profile-menu-item danger" data-profile-action="logout">↪ Logout</button>';
     topActions.appendChild(menu);
