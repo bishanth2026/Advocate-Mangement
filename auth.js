@@ -9,7 +9,7 @@
     client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     return client;
   }
-  function cache(profile,member,workspace){
+  function cache(profile,member,workspace,portal){
     var role=portal==="super_admin"?"super_admin":member.role;
     var a={role:role,portal:portal,platformRole:profile.platform_role||"user",workspaceRole:member.role,name:profile.full_name||profile.email,email:profile.email,workspaceId:workspace.id,workspaceName:workspace.name,cloudAuth:true,loginAt:new Date().toISOString()};
     localStorage.setItem("advocateDeskAuth",JSON.stringify(a));return a;
@@ -31,7 +31,7 @@
     // Resolve the workspace strictly from the authenticated user's active memberships.
     // Never hardcode a workspace ID in production authentication logic.
     var chosen=members[0];
-    return cache(p.data,chosen,chosen.workspaces);
+    return cache(p.data,chosen,chosen.workspaces,portal);
   }
   window.ADAuth={
     get:function(){try{return JSON.parse(localStorage.getItem("advocateDeskAuth")||"null")}catch(e){return null}},
