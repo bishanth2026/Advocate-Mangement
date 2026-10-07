@@ -10,8 +10,8 @@
     return client;
   }
   function cache(profile,member,workspace){
-    var role=profile.platform_role==="super_admin"?"super_admin":member.role;
-    var a={role:role,workspaceRole:member.role,name:profile.full_name||profile.email,email:profile.email,workspaceId:workspace.id,workspaceName:workspace.name,cloudAuth:true,loginAt:new Date().toISOString()};
+    var role=portal==="super_admin"?"super_admin":member.role;
+    var a={role:role,portal:portal,platformRole:profile.platform_role||"user",workspaceRole:member.role,name:profile.full_name||profile.email,email:profile.email,workspaceId:workspace.id,workspaceName:workspace.name,cloudAuth:true,loginAt:new Date().toISOString()};
     localStorage.setItem("advocateDeskAuth",JSON.stringify(a));return a;
   }
   async function resolveAccess(user,portal){
@@ -54,7 +54,7 @@
       var c=getClient(),s=await c.auth.getSession();
       if(s.error)throw s.error;
       if(!s.data.session||!s.data.session.user)return null;
-      var old=this.get(),portal=old&&old.role==="super_admin"?"super_admin":"admin";
+      var old=this.get(),portal=old&&old.portal?(old.portal):(old&&old.role==="super_admin"?"super_admin":"admin");
       try{return await resolveAccess(s.data.session.user,portal)}catch(e){await c.auth.signOut();return null;}
     },
     logout:async function(){try{await getClient().auth.signOut()}catch(e){}localStorage.removeItem("advocateDeskAuth");window.location.replace("login.html");},
