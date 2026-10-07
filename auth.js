@@ -54,7 +54,7 @@
       var c=getClient(),s=await c.auth.getSession();
       if(s.error)throw s.error;
       if(!s.data.session||!s.data.session.user)return null;
-      var old=this.get(),portal=old&&old.portal?(old.portal):(old&&old.workspaceRole==="admin"?"admin":(old&&old.role==="super_admin"?"super_admin":"admin"));
+      var requested=new URLSearchParams(window.location.search).get("portal"),old=this.get(),portal=requested==="admin"||requested==="super_admin"?requested:(old&&old.portal?(old.portal):(old&&old.workspaceRole==="admin"?"admin":(old&&old.role==="super_admin"?"super_admin":"admin")));
       try{return await resolveAccess(s.data.session.user,portal)}catch(e){await c.auth.signOut();return null;}
     },
     logout:async function(){try{await getClient().auth.signOut()}catch(e){}localStorage.removeItem("advocateDeskAuth");window.location.replace("login.html");},
