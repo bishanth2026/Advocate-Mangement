@@ -25,7 +25,7 @@
     var m=await c.from("workspace_members").select("workspace_id,role,workspaces(id,name,status)").eq("user_id",user.id);
     if(m.error)throw m.error;
     var members=m.data||[];
-    if(portal==="admin")members=members.filter(function(x){return x.role==="admin"&&x.workspaces&&x.workspaces.status==="active"});
+    if(portal==="admin"){if(p.data.platform_role==="super_admin")throw new Error("Super Admin accounts must use the Super Admin portal.");members=members.filter(function(x){return x.role==="admin"&&x.workspaces&&x.workspaces.status==="active"});}
     else members=members.filter(function(x){return x.workspaces&&x.workspaces.status==="active"});
     if(!members.length)throw new Error(portal==="admin"?"No active Admin workspace is assigned to this account.":"No active workspace is assigned to this account.");
     // Resolve the workspace strictly from the authenticated user's active memberships.
