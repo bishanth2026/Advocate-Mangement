@@ -40,7 +40,7 @@
     resetPassword:async function(email){
       var address=String(email||"").trim();
       if(!address)throw new Error("Enter your account email address first.");
-      var redirectTo=new URL("reset-password.html",window.location.href).href;
+      var redirectTo="https://advocate.biznexco.in/reset-password.html";
       var r=await getClient().auth.resetPasswordForEmail(address,{redirectTo:redirectTo});
       if(r.error)throw r.error;
       return true;
