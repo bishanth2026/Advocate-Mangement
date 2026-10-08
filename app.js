@@ -1178,9 +1178,17 @@ async function sendCaseEmail(c,client){
     if(typeof window.showToast==="function")window.showToast("Case email sent to "+email);else alert("Case email sent to "+email);
     return true;
   }catch(err){
+    const message=err?.message||"Email service unavailable.";
+    if(/not configured|service unavailable|503/i.test(message)){
+      const mailto="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent(content.subject)+"&body="+encodeURIComponent(content.text);
+      const item=state.communications.find(x=>x.caseId===c.id&&x.channel==="Email"&&x.status==="Pending");
+      if(item){item.status="Opened";item.error="Direct email service is not configured; email draft opened in the default mail application.";save();}
+      window.location.href=mailto;
+      return true;
+    }
     const item=state.communications.find(x=>x.caseId===c.id&&x.channel==="Email"&&x.status==="Pending");
-    if(item){item.status="Failed";item.error=err?.message||"Email could not be sent.";save();}
-    alert("Case was saved, but email could not be sent. "+(err?.message||"Email service unavailable."));
+    if(item){item.status="Failed";item.error=message;save();}
+    alert("Case was saved, but email could not be sent. "+message);
     return false;
   }
 }
