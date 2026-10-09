@@ -8,6 +8,7 @@ const shell = read("../app.html");
 const reset = read("../reset-password.html");
 
 assert.match(auth, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production auth must point to the production Supabase project");
+assert.match(auth, /new URL\("reset-password\.html",window\.location\.origin\)\.href/, "Password reset must return to the origin that initiated the request");
 assert.doesNotMatch(auth, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production auth must not contain QA Supabase/site configuration");
 assert.match(reset, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production reset page must point to the production Supabase project");
 assert.doesNotMatch(reset, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production reset page must not contain QA configuration");
