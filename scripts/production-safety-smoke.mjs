@@ -11,6 +11,7 @@ assert.match(auth, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production a
 assert.match(auth, /new URL\("reset-password\.html",window\.location\.origin\)\.href/, "Password reset must return to the origin that initiated the request");
 assert.doesNotMatch(auth, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production auth must not contain QA Supabase/site configuration");
 assert.match(reset, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production reset page must point to the production Supabase project");
+assert.match(reset, /token_hash:p\.tokenHash,type:type/, "Reset page must verify the detected recovery or invitation token type");
 assert.doesNotMatch(reset, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production reset page must not contain QA configuration");
 assert.match(app, /async function validateDocumentFileSignature\(file\)/, "Document signature validation must exist");
 assert.match(app, /head\.includes\("%PDF-"\)/, "PDF signature check must exist");
